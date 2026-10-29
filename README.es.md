@@ -9,10 +9,14 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 ## Funciones actuales
 
 - Abrir uno o varios archivos del dispositivo mediante el selector de archivos o arrastrar y soltar.
-- Previsualizar imágenes, PDF, audio, vídeo y formatos comunes de texto/código compatibles con el navegador.
+- Previsualizar imágenes, PDF, audio, vídeo, código fuente, subtítulos y formatos de texto habituales.
+- Previsualizar documentos DOCX con Mammoth y consultar hojas XLSX/XLS/ODS con SheetJS.
+- Consultar el contenido de archivos ZIP/CBZ/EPUB y extraer archivos individuales desde el navegador.
+- Mostrar letras incrustadas en archivos de audio cuando sus metadatos las incluyan, junto con una onda animada que reacciona al sonido.
 - Importar archivos desde una URL directa si el servidor remoto permite el acceso entre orígenes (CORS).
-- Convertir imágenes a PNG, JPEG o WebP mediante Canvas del navegador.
-- Exportar una imagen como PDF usando jsPDF cargado desde una CDN.
+- Convertir imágenes entre PNG, JPEG, WebP y PDF.
+- Convertir páginas PDF a PNG/JPEG (una imagen por página; los documentos multipágina se agrupan en ZIP) o extraer su texto.
+- Convertir texto, Markdown, HTML, JSON, CSV/TSV, DOCX y hojas de cálculo a formatos compatibles como PDF, HTML, TXT, CSV o JSON.
 - Procesar los archivos seleccionados en el navegador; OmniFile no los sube a un servidor propio.
 - Usar la misma interfaz en GitHub Pages o servirla desde tu propio equipo.
 - Cambiar el idioma de la interfaz entre español e inglés desde el selector superior.
@@ -67,10 +71,15 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Función | Compatibilidad actual |
 | --- | --- |
 | Vista previa de imágenes | Formatos compatibles con el navegador, normalmente PNG, JPEG, GIF, WebP, SVG y AVIF (según el navegador) |
-| Conversión de imágenes | PNG, JPEG y WebP; depende de los codificadores del navegador |
+| Conversión de imágenes | PNG, JPEG, WebP y PDF; depende de los codificadores del navegador |
+| Conversión de PDF | Páginas PDF a PNG/JPEG y texto PDF a TXT; las imágenes multipágina se agrupan en ZIP |
+| Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
+| Vista previa/conversión de Office | Vista previa DOCX y exportación a HTML/TXT; primera hoja XLSX/XLS/ODS a CSV/JSON |
+| Vista previa de archivos comprimidos | Listado ZIP, CBZ y EPUB, con extracción individual; no renderiza el EPUB como libro completo |
+| Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
-| Texto y código fuente | Formatos comunes de texto, marcado, configuración y código; vista previa limitada a 1 MB de texto |
+| Texto y código fuente | Formatos comunes de texto, marcado, configuración y código; vista previa limitada a 2 MB de texto |
 | Audio y vídeo | Solo contenedores y códecs compatibles con el navegador |
 | MP4 a MP3 | **No implementado** en la versión web actual |
 | Documentos Office, archivos comprimidos, CAD, 3D y formatos propietarios | **Sin compatibilidad universal**; hacen falta bibliotecas específicas o herramientas externas locales |
@@ -81,10 +90,10 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 
 - Los archivos seleccionados permanecen en el navegador y no se envían a un backend de OmniFile.
 - La importación por URL usa `fetch()`; el servidor remoto debe permitir CORS. Una página web normal no siempre es un enlace directo a un archivo.
-- jsPDF y Google Fonts se cargan desde servicios externos. La conversión a PDF puede fallar si la CDN no está disponible.
+- jsPDF, PDF.js, Mammoth, SheetJS, JSZip y Google Fonts pueden cargarse desde CDN externas. Las herramientas correspondientes necesitan conexión a Internet para cargar esas bibliotecas; fallarán si la CDN no está disponible.
 - Los archivos o imágenes muy grandes pueden superar los límites de memoria del navegador.
 - El navegador exige que selecciones los archivos; OmniFile no puede leer rutas arbitrarias del disco.
-- Ejecutar OmniFile en local significa servir la interfaz web desde tu equipo. **Todavía no incluye un backend local de FFmpeg** ni conversiones avanzadas como MP4 a MP3, documentos Office o archivos comprimidos.
+- Ejecutar OmniFile en local significa servir la interfaz web desde tu equipo. **Todavía no incluye un backend local de FFmpeg** ni conversión de vídeo como MP4 a MP3, transcodificación de vídeo, compatibilidad completa con Office o formatos CAD/3D.
 
 ## Próximos pasos
 
