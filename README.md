@@ -1,5 +1,7 @@
 # OmniFile
 
+[Español: README.es.md](README.es.md) · [Open OmniFile on GitHub Pages](https://ericsnet.github.io/OmniFile/)
+
 **A browser-first file viewer and converter, with an optional local service planned for advanced formats.**
 
 OmniFile is a static web app that can be published on GitHub Pages and opened locally. It is designed to make common file previews and conversions accessible from one interface.
@@ -13,6 +15,7 @@ OmniFile is a static web app that can be published on GitHub Pages and opened lo
 - Export an image as a PDF using jsPDF loaded from a CDN.
 - Process selected local files in the browser; OmniFile does not upload those files to an OmniFile backend.
 - Start the local web app with one launcher script; no Node.js packages or Python dependencies are required.
+- Switch the interface between English and Spanish using the language selector in the top bar.
 
 ## Run locally
 
@@ -49,7 +52,7 @@ python -m http.server 8000
 
 Then open <http://localhost:8000>. You can also run `python run_local.py` to start the app on an available local port and open the browser automatically.
 
-The local server binds only to `127.0.0.1` (your own computer), not to your public network interface. The browser still enforces its normal file access and cross-origin restrictions.
+The local server binds only to `127.0.0.1` (your own computer), not to your public network interface. The browser still enforces its normal file access and cross-origin restrictions. The same language selector is available in both local mode and GitHub Pages.
 
 ## Format support: what is and isn't included
 
