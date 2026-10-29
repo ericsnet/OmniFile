@@ -72,7 +72,18 @@
           if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;i+=2;}
           else {while(i<frame.length&&frame[i]!==0)i++;i++;}
           if(id==='USLT'){const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\\0/g,'').trim()};}
-          const lang=String.fromCharCode(...frame.slice(1,4)),content=decodeText(frame.slice(i),enc).replace(/\\0/g,'\\n').trim();
+          const lang=String.fromCharCode(...frame.slice(1,4)),chunks=[];
+          while(i<frame.length){
+            const start=i;
+            if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;}
+            else {while(i<frame.length&&frame[i]!==0)i++;}
+            const chunk=decodeText(frame.slice(start,i),enc).replace(/\\0/g,'').trim();
+            if(chunk)chunks.push(chunk);
+            i+=enc===1||enc===2?2:1;
+            if(i+4>frame.length)break;
+            i+=4;
+          }
+          const content=chunks.join('\\n').trim();
           if(content)return {kind:'synced',text:content,lang};
         }
         pos+=10+size;
