@@ -68,7 +68,7 @@
         const size=version===4?((bytesView[pos+4]&127)<<21)|((bytesView[pos+5]&127)<<14)|((bytesView[pos+6]&127)<<7)|(bytesView[pos+7]&127):data.getUint32(pos+4,false);
         if(!size||pos+10+size>end)break;
         if(id==='USLT'||id==='SYLT'){
-          const frame=bytesView.slice(pos+10,pos+10+size),enc=frame[0];let i=4;
+          const frame=bytesView.slice(pos+10,pos+10+size),enc=frame[0];let i=id==='SYLT'?6:4;
           if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;i+=2;}
           else {while(i<frame.length&&frame[i]!==0)i++;i++;}
           if(id==='USLT'){const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\\0/g,'').trim()};}
@@ -109,9 +109,14 @@
       else {const c=canvas.getContext('2d');c.strokeStyle='#8de5c5';c.lineWidth=2;c.beginPath();for(let x=0;x<canvas.width||x<500;x+=5){const y=70+Math.sin(x*.06)*20*Math.sin(x*.013);if(x===0)c.moveTo(x,y);else c.lineTo(x,y);}c.stroke();}
     }catch(_){const c=canvas.getContext('2d');c.strokeStyle='#8de5c5';c.lineWidth=2;c.beginPath();for(let x=0;x<600;x+=4){const y=70+Math.sin(x*.05)*24*Math.sin(x*.012);if(!x)c.moveTo(x,y);else c.lineTo(x,y);}c.stroke();}
     try{
-      const embedded=await parseLyrics(file);
-      if(embedded&&embedded.text){lyrics.textContent=embedded.text;lyricsHead.textContent=embedded.kind==='synced'?'SYNCHRONIZED LYRICS / ID3 SYLT':'LYRICS / ID3 USLT';}
-      else {lyrics.textContent='No embedded lyrics were found in this file. OmniFile does not search the internet for lyrics.';lyrics.classList.add('lyrics-missing');}
+      let embedded=await parseLyrics(file);
+      if(!embedded||!embedded.text){
+        const base=file.name.replace(/\.[^.]+$/,'').toLowerCase();
+        const sidecar=files.find(candidate=>ext(candidate)==='lrc'&&candidate.name.replace(/\.[^.]+$/,'').toLowerCase()===base);
+        if(sidecar)embedded={kind:'lrc',text:await sidecar.text()};
+      }
+      if(embedded&&embedded.text){lyrics.textContent=embedded.text;lyricsHead.textContent=embedded.kind==='synced'?'SYNCHRONIZED LYRICS / ID3 SYLT':embedded.kind==='lrc'?'LYRICS / LRC SIDECAR':'LYRICS / EMBEDDED METADATA';}
+      else {lyrics.textContent='No embedded lyrics or matching .lrc sidecar were found. OmniFile does not search the internet for lyrics.';lyrics.classList.add('lyrics-missing');}
     }catch(_){lyrics.textContent='Could not read embedded lyrics metadata.';lyrics.classList.add('lyrics-missing');}
   }
   async function renderPdf(file,url){
