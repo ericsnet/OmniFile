@@ -88,6 +88,32 @@
     'Library failed to initialize.':'No se ha podido iniciar la biblioteca.',
     'No embedded lyrics were found in this file. OmniFile does not search the internet for lyrics.':'No se han encontrado letras integradas en este archivo. OmniFile no busca letras en Internet.',
     'Could not preview spreadsheet: ':'No se ha podido previsualizar la hoja de cálculo: ','Could not preview archive: ':'No se ha podido previsualizar el archivo comprimido: '
+,
+    'OmniFile — File tools, in one place':'OmniFile — Herramientas para archivos en un solo lugar',
+    'Language':'Idioma','English':'Inglés','GitHub ↗':'GitHub ↗',
+    'JPG':'JPG','JPEG':'JPEG','WebP':'WebP',
+    'SYNCHRONIZED LYRICS / ID3 SYLT':'LETRAS SINCRONIZADAS / ID3 SYLT',
+    'LYRICS / ID3 USLT':'LETRAS / ID3 USLT',
+    'Download original file':'Descargar archivo original',
+    'Document opened with ':'Documento abierto con ',
+    ' conversion note(s).':' aviso(s) de conversión.',
+    'Packaging PDF pages…':'Preparando las páginas del PDF…',
+    'Could not create a canvas for PDF rendering.':'No se ha podido crear un lienzo para procesar el PDF.',
+    'PDF export library did not load. Check your connection.':'No se ha cargado la biblioteca de exportación PDF. Comprueba la conexión.',
+    'Library failed to initialize.':'No se ha podido iniciar la biblioteca.',
+    'Could not load conversion library.':'No se ha podido cargar la biblioteca de conversión.',
+    'Could not load conversion library. Check your internet connection.':'No se ha podido cargar la biblioteca de conversión. Comprueba tu conexión a Internet.',
+    'File list cleared.':'Se ha vaciado la lista de archivos.',
+    'Fetching file from URL…':'Obteniendo el archivo desde la URL…',
+    'The URL returned HTTP ':'La URL ha devuelto el código HTTP ',
+    'Could not fetch this URL. It may block cross-origin requests (CORS), require sign-in, or not be a direct file link. ':'No se ha podido obtener esta URL. Puede bloquear solicitudes de otros orígenes (CORS), requerir inicio de sesión o no ser un enlace directo al archivo. ',
+    'Conversion failed.':'La conversión ha fallado.',
+    'Conversion finished. Your file was created in the browser.':'Conversión terminada. El archivo se ha creado en el navegador.',
+    'Available for this file: ':'Disponible para este archivo: ',
+    'No embedded lyrics or matching .lrc sidecar were found. OmniFile does not search the internet for lyrics.':'No se han encontrado letras integradas ni un archivo .lrc asociado. OmniFile no busca letras en Internet.',
+    'No conversion has been configured for this file type yet.':'Todavía no hay ninguna conversión configurada para este tipo de archivo.',
+    'Conversion finished. If multiple PDF pages were converted, they were bundled into a ZIP archive.':'Conversión terminada. Si se han convertido varias páginas PDF, se han agrupado en un archivo ZIP.'
+
   };
   const attrs = {
     'OmniFile home':'Inicio de OmniFile',
@@ -102,9 +128,9 @@
     if (exact[core]) return lead + exact[core] + trail;
     let m;
     if ((m = core.match(/^(\d+) file\(s\) added\. Select one to preview or convert\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
-    if ((m = core.match(/^Added (\\d+) file\\(s\\)\\. Select one to preview or convert\\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
-    if ((m = core.match(/^Rendering PDF page (\\d+) of (\\d+)…$/))) return lead + 'Procesando página PDF ' + m[1] + ' de ' + m[2] + '…' + trail;
-    if ((m = core.match(/^Rendered (\\d+) PDF page\\(s\\)\\. Use each link to save a PNG\\.$/))) return lead + 'Procesadas ' + m[1] + ' página(s) del PDF. Usa cada enlace para guardar un PNG.' + trail;
+    if ((m = core.match(/^Added (\d+) file\(s\)\\. Select one to preview or convert\\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
+    if ((m = core.match(/^Rendering PDF page (\d+) of (\d+)…$/))) return lead + 'Procesando página PDF ' + m[1] + ' de ' + m[2] + '…' + trail;
+    if ((m = core.match(/^Rendered (\d+) PDF page\(s\)\\. Use each link to save a PNG\\.$/))) return lead + 'Procesadas ' + m[1] + ' página(s) del PDF. Usa cada enlace para guardar un PNG.' + trail;
     if (core.startsWith('Could not preview this DOCX file: ')) return lead + 'No se ha podido previsualizar este DOCX: ' + core.slice(33) + trail;
     if (core.startsWith('Could not preview spreadsheet: ')) return lead + 'No se ha podido previsualizar la hoja de cálculo: ' + core.slice(29) + trail;
     if (core.startsWith('Could not open archive: ')) return lead + 'No se ha podido abrir el archivo comprimido: ' + core.slice(22) + trail;
