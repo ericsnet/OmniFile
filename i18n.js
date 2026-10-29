@@ -35,6 +35,7 @@
     'Image conversion is browser-based. PDF export uses a small external library loaded from a CDN.':'La conversión de imágenes se realiza en el navegador. La exportación a PDF utiliza una biblioteca externa cargada desde una CDN.',
     'INSPECT / 04':'INSPECCIÓN / 04',
     'Preview':'Vista previa',
+    'Close preview ×':'Cerrar vista previa ×',
     'Close preview':'Cerrar vista previa',
     'Close preview ×':'Cerrar vista previa ×',
     'BUILT FOR EVERYDAY FILES':'DISEÑADO PARA ARCHIVOS DEL DÍA A DÍA',
