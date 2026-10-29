@@ -12,7 +12,7 @@ OmniFile is a static web app that can be published on GitHub Pages and opened lo
 - Preview browser-supported images, PDF, audio, video, source code, subtitles, and common text formats.
 - Preview DOCX documents with Mammoth; inspect XLSX/XLS/ODS spreadsheets with SheetJS.
 - Inspect ZIP/CBZ/EPUB archive contents and extract individual files in the browser.
-- Read embedded ID3 lyrics from audio files when present, with an animated audio-reactive waveform.
+- Read embedded ID3/Vorbis lyrics or matching .lrc sidecar files when present, with an animated audio-reactive waveform.
 - Import a direct file URL when the remote server permits cross-origin browser access (CORS).
 - Convert images between PNG, JPEG, WebP, and PDF.
 - Convert PDF pages to PNG/JPEG (one page per image; multi-page output is bundled into ZIP), or extract PDF text.
