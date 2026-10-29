@@ -64,11 +64,13 @@
       let size=version===4?((bytesView[pos+4]&127)<<21)|((bytesView[pos+5]&127)<<14)|((bytesView[pos+6]&127)<<7)|(bytesView[pos+7]&127):data.getUint32(pos+4,false);
       if(!size||pos+10+size>end)break;
       if(id==='USLT'||id==='SYLT'){
-        const frame=bytesView.slice(pos+10,pos+10+size), enc=frame[0];let i=1;while(i<frame.length&&frame[i]!==0)i++;i++;
+        const frame=bytesView.slice(pos+10,pos+10+size), enc=frame[0];let i=4;
+        if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;i+=2;}
+        else {while(i<frame.length&&frame[i]!==0)i++;i++;}
         if(id==='USLT'){
-          const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\0/g,'').trim()};
+          const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\\0/g,'').trim()};
         }
-        const lang=String.fromCharCode(...frame.slice(1,4));const content=decodeText(frame.slice(i),enc).replace(/\0/g,'\n').trim();
+        const lang=String.fromCharCode(...frame.slice(1,4));const content=decodeText(frame.slice(i),enc).replace(/\\0/g,'\\n').trim();
         if(content)return {kind:'synced',text:content,lang};
       }
       pos+=10+size;
