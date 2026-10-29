@@ -3,7 +3,7 @@
   const fileInput = $('#file-input'), dropZone = $('#drop-zone'), fileList = $('#file-list'), fileListWrap = $('#file-list-wrap');
   const previewSection = $('#preview-section'), previewContent = $('#preview-content'), previewTitle = $('#preview-title'), status = $('#status');
   const formatSelect = $('#format-select'), previewAction = $('#preview-action'), convertAction = $('#convert-action');
-  let files = [], selectedIndex = -1, previewUrl = null, audioContext = null, audioFrame = 0, activeAudio = null;
+  let files = [], selectedIndex = -1, previewUrl = null, previewObjectUrls = [], audioContext = null, audioFrame = 0, activeAudio = null;
   const ext = f => ((f.name.match(/\.([^.]+)$/)||[])[1]||'').toLowerCase();
   const bytes = n => n < 1024 ? n+' B' : n < 1048576 ? (n/1024).toFixed(1)+' KB' : (n/1048576).toFixed(1)+' MB';
   const t = (key, fallback, ...args) => window.omniT ? window.omniT(key, ...args) : fallback;
@@ -52,7 +52,7 @@
     if(activeAudio){try{activeAudio.pause();activeAudio.removeAttribute('src');activeAudio.load();}catch(_){} activeAudio=null;}
     if(audioContext){audioContext.close().catch(()=>{});audioContext=null;}
   }
-  function clearPreview(){stopAudio();if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;previewContent.replaceChildren();}
+  function clearPreview(){stopAudio();if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;previewObjectUrls.forEach(url=>URL.revokeObjectURL(url));previewObjectUrls=[];previewContent.replaceChildren();}
   function textPreview(text){const pre=document.createElement('pre');pre.textContent=text.slice(0,2_000_000)+(text.length>2_000_000?'\n\n[Preview limited to 2 MB of text]':'');previewContent.append(pre);}
   async function parseLyrics(file){
     const buffer=await file.arrayBuffer(), bytesView=new Uint8Array(buffer);
@@ -132,7 +132,7 @@
   }
   async function renderPdf(file,url){
     const frame=document.createElement('iframe');frame.src=url;frame.title='PDF preview';previewContent.append(frame);
-    const button=document.createElement('button');button.className='secondary-btn';button.type='button';button.textContent='Render PDF pages as images';button.addEventListener('click',async()=>{button.disabled=true;try{const pdfjs=await libs.pdf();const doc=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;const gallery=document.createElement('div');gallery.className='page-gallery';for(let n=1;n<=doc.numPages;n++){const page=await doc.getPage(n);const viewport=page.getViewport({scale:1.5});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;const img=document.createElement('img');img.src=canvas.toDataURL('image/png');img.alt='PDF page '+n;const a=document.createElement('a');a.href=img.src;a.download=file.name.replace(/\.pdf$/i,'')+'-page-'+n+'.png';a.textContent='Download page '+n+' as PNG';const card=document.createElement('div');card.append(img,a);gallery.append(card);}previewContent.append(gallery);setStatus('Rendered '+doc.numPages+' PDF page(s). Use each link to save a PNG.');}catch(e){setStatus(e.message||'Could not render this PDF.',true);}finally{button.disabled=false;}});previewContent.append(button);
+    const button=document.createElement('button');button.className='secondary-btn';button.type='button';button.textContent='Render PDF pages as images';button.addEventListener('click',async()=>{button.disabled=true;try{const pdfjs=await libs.pdf();const doc=await pdfjs.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;const gallery=document.createElement('div');gallery.className='page-gallery';previewContent.append(gallery);for(let n=1;n<=doc.numPages;n++){setStatus('Rendering PDF page '+n+' of '+doc.numPages+'…');await new Promise(resolve=>requestAnimationFrame(()=>resolve()));const page=await doc.getPage(n);let viewport=page.getViewport({scale:1.0});const base=page.getViewport({scale:1});const maxPixels=6_000_000;if(viewport.width*viewport.height>maxPixels)viewport=page.getViewport({scale:Math.sqrt(maxPixels/(base.width*base.height))});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode PDF page.')),'image/png'));const imageUrl=URL.createObjectURL(blob);previewObjectUrls.push(imageUrl);const img=document.createElement('img');img.src=imageUrl;img.alt='PDF page '+n;const a=document.createElement('a');a.href=imageUrl;a.download=file.name.replace(/\.pdf$/i,'')+'-page-'+n+'.png';a.textContent='Download page '+n+' as PNG';const card=document.createElement('div');card.append(img,a);gallery.append(card);canvas.width=1;canvas.height=1;page.cleanup();}await doc.destroy();setStatus('Rendered '+doc.numPages+' PDF page(s). Use each link to save a PNG.');}catch(e){setStatus(e.message||'Could not render this PDF.',true);}finally{button.disabled=false;}});previewContent.append(button);
     const extract=document.createElement('button');extract.className='secondary-btn';extract.type='button';extract.textContent='Extract PDF text';extract.style.marginLeft='8px';extract.addEventListener('click',async()=>{extract.disabled=true;try{const pdfjs=await libs.pdf();const doc=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;let all='';for(let n=1;n<=doc.numPages;n++){const page=await doc.getPage(n);const content=await page.getTextContent();all+='\n--- Page '+n+' ---\n'+content.items.map(x=>x.str).join(' ')+'\n';}const pre=document.createElement('pre');pre.textContent=all;previewContent.append(pre);setStatus('PDF text extracted.');}catch(e){setStatus(e.message||'Could not extract PDF text.',true);}finally{extract.disabled=false;}});previewContent.append(extract);
   }
   async function showPreview(file){
@@ -184,16 +184,27 @@
     const help=$('#conversion-help');if(help)help.textContent=choices.length?'Available for this file: '+choices.map(x=>x[1]).join(', '):'No conversion has been configured for this file type yet.';
   }
   async function pdfToImages(file,target){
-    const pdfjs=await libs.pdf(),doc=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;
+    const pdfjs=await libs.pdf(),doc=await pdfjs.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;
     let zip=null;if(doc.numPages>1)zip=new (await libs.zip())();
     for(let n=1;n<=doc.numPages;n++){
-      setStatus('Rendering PDF page '+n+' of '+doc.numPages+'…');const page=await doc.getPage(n);const viewport=page.getViewport({scale:1.6});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-      const ctx=canvas.getContext('2d',{alpha:target==='image/png'});if(target==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);}
-      await page.render({canvasContext:ctx,viewport}).promise;const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode PDF page.')),target,.92));
+      setStatus('Rendering PDF page '+n+' of '+doc.numPages+'…');
+      await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+      const page=await doc.getPage(n);
+      let viewport=page.getViewport({scale:1.25});
+      const maxPixels=8_000_000,pixels=viewport.width*viewport.height;
+      if(pixels>maxPixels)viewport=page.getViewport({scale:1.25*Math.sqrt(maxPixels/pixels)});
+      const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+      const ctx=canvas.getContext('2d',{alpha:target==='image/png'});
+      if(!ctx)throw new Error('Could not create a canvas for PDF rendering.');
+      if(target==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);}
+      await page.render({canvasContext:ctx,viewport}).promise;
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode PDF page.')),target,target==='image/jpeg' ? .84 : undefined));
       const extOut=target==='image/jpeg'?'jpg':'png',name=file.name.replace(/\.pdf$/i,'')+'-page-'+String(n).padStart(3,'0')+'.'+extOut;
-      if(zip)zip.file(name,blob);else downloadBlob(blob,name);
+      if(zip)zip.file(name,blob,{compression:'STORE'});else downloadBlob(blob,name);
+      canvas.width=1;canvas.height=1;page.cleanup();
     }
-    if(zip){const blob=await zip.generateAsync({type:'blob'});downloadBlob(blob,file.name.replace(/\.pdf$/i,'')+'-pages.zip');}
+    if(zip){setStatus('Packaging PDF pages…');const blob=await zip.generateAsync({type:'blob',compression:'STORE'});downloadBlob(blob,file.name.replace(/\.pdf$/i,'')+'-pages.zip');}
+    await doc.destroy();
   }
   function csvToRows(text){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===','&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows;}
   function rowsToCsv(rows){return rows.map(row=>row.map(value=>{const s=String(value??'');return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');}
