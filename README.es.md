@@ -12,7 +12,7 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 - Previsualizar imágenes, PDF, audio, vídeo, código fuente, subtítulos y formatos de texto habituales.
 - Previsualizar documentos DOCX con Mammoth y consultar hojas XLSX/XLS/ODS con SheetJS.
 - Consultar el contenido de archivos ZIP/CBZ/EPUB y extraer archivos individuales desde el navegador.
-- Mostrar letras incrustadas en archivos de audio cuando sus metadatos las incluyan, junto con una onda animada que reacciona al sonido.
+- Mostrar letras incrustadas en los metadatos del audio o en archivos `.lrc` asociados, junto con una onda animada que reacciona al sonido.
 - Importar archivos desde una URL directa si el servidor remoto permite el acceso entre orígenes (CORS).
 - Convertir imágenes entre PNG, JPEG, WebP y PDF.
 - Convertir páginas PDF a PNG/JPEG (una imagen por página; los documentos multipágina se agrupan en ZIP) o extraer su texto.
