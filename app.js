@@ -55,26 +55,33 @@
   function clearPreview(){stopAudio();if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;previewContent.replaceChildren();}
   function textPreview(text){const pre=document.createElement('pre');pre.textContent=text.slice(0,2_000_000)+(text.length>2_000_000?'\n\n[Preview limited to 2 MB of text]':'');previewContent.append(pre);}
   async function parseLyrics(file){
-    const buffer=await file.arrayBuffer(), data=new DataView(buffer), bytesView=new Uint8Array(buffer);
-    if(bytesView.length<10||String.fromCharCode(...bytesView.slice(0,3))!=='ID3')return null;
-    const version=bytesView[3];const tagSize=((bytesView[6]&127)<<21)|((bytesView[7]&127)<<14)|((bytesView[8]&127)<<7)|(bytesView[9]&127);
-    let pos=10, end=Math.min(bytesView.length,10+tagSize);
-    while(pos+10<=end){
-      const id=String.fromCharCode(...bytesView.slice(pos,pos+4));if(!/^[A-Z0-9]{4}$/.test(id))break;
-      let size=version===4?((bytesView[pos+4]&127)<<21)|((bytesView[pos+5]&127)<<14)|((bytesView[pos+6]&127)<<7)|(bytesView[pos+7]&127):data.getUint32(pos+4,false);
-      if(!size||pos+10+size>end)break;
-      if(id==='USLT'||id==='SYLT'){
-        const frame=bytesView.slice(pos+10,pos+10+size), enc=frame[0];let i=4;
-        if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;i+=2;}
-        else {while(i<frame.length&&frame[i]!==0)i++;i++;}
-        if(id==='USLT'){
-          const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\\0/g,'').trim()};
+    const buffer=await file.arrayBuffer(), bytesView=new Uint8Array(buffer);
+    if(bytesView.length<4)return null;
+    const hasId3=String.fromCharCode(...bytesView.slice(0,3))==='ID3';
+    if(hasId3&&bytesView.length>=10){
+      const data=new DataView(buffer),version=bytesView[3];
+      const tagSize=((bytesView[6]&127)<<21)|((bytesView[7]&127)<<14)|((bytesView[8]&127)<<7)|(bytesView[9]&127);
+      let pos=10,end=Math.min(bytesView.length,10+tagSize);
+      while(pos+10<=end){
+        const id=String.fromCharCode(...bytesView.slice(pos,pos+4));
+        if(!/^[A-Z0-9]{4}$/.test(id))break;
+        const size=version===4?((bytesView[pos+4]&127)<<21)|((bytesView[pos+5]&127)<<14)|((bytesView[pos+6]&127)<<7)|(bytesView[pos+7]&127):data.getUint32(pos+4,false);
+        if(!size||pos+10+size>end)break;
+        if(id==='USLT'||id==='SYLT'){
+          const frame=bytesView.slice(pos+10,pos+10+size),enc=frame[0];let i=4;
+          if(enc===1||enc===2){while(i+1<frame.length&&!(frame[i]===0&&frame[i+1]===0))i+=2;i+=2;}
+          else {while(i<frame.length&&frame[i]!==0)i++;i++;}
+          if(id==='USLT'){const raw=frame.slice(i);return {kind:'lyrics',text:decodeText(raw,enc).replace(/\\0/g,'').trim()};}
+          const lang=String.fromCharCode(...frame.slice(1,4)),content=decodeText(frame.slice(i),enc).replace(/\\0/g,'\\n').trim();
+          if(content)return {kind:'synced',text:content,lang};
         }
-        const lang=String.fromCharCode(...frame.slice(1,4));const content=decodeText(frame.slice(i),enc).replace(/\\0/g,'\\n').trim();
-        if(content)return {kind:'synced',text:content,lang};
+        pos+=10+size;
       }
-      pos+=10+size;
     }
+    // FLAC and Ogg Vorbis comments can contain plain LYRICS/UNSYNCEDLYRICS fields.
+    const rawTag=new TextDecoder('windows-1252').decode(bytesView);
+    const match=rawTag.match(/(?:UNSYNCEDLYRICS|LYRICS|LYRICS3)=([^\\0]+)/i);
+    if(match&&match[1].trim())return {kind:'lyrics',text:match[1].trim()};
     return null;
   }
   function decodeText(bytesView,encoding){
