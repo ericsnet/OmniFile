@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10111a">
+  <meta name="description" content="OmniFile — preview files and convert common formats in your browser.">
+  <title>OmniFile — File tools, in one place</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="OmniFile home"><span class="brand-mark">O</span><span>Omni<span class="brand-light">File</span></span></a>
+      <div class="top-actions"><span class="privacy"><span class="status-dot"></span> Files stay in your browser</span><a class="github-link" href="https://github.com/ericsnet/OmniFile" target="_blank" rel="noreferrer">GitHub ↗</a></div>
+    </header>
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span class="eyebrow-line"></span> YOUR FILES, YOUR WORKFLOW</div>
+        <h1>Every file has<br><span>a place here.</span></h1>
+        <p class="hero-copy">Preview files from your device or a URL, and convert common formats without uploading your files to a conversion server.</p>
+        <div class="hero-tags"><span>Private by design</span><span>Browser-powered</span><span>No account needed</span></div>
+      </section>
+
+      <section class="workspace" aria-label="File workspace">
+        <div class="workspace-heading"><div><div class="section-kicker">WORKSPACE / 01</div><h2>Open a file</h2></div><span class="subtle-label">LOCAL OR ONLINE</span></div>
+        <div class="source-tabs" role="tablist" aria-label="File source">
+          <button class="source-tab active" id="tab-local" role="tab" aria-selected="true" data-source="local"><span>↥</span> From device</button>
+          <button class="source-tab" id="tab-url" role="tab" aria-selected="false" data-source="url"><span>↗</span> From URL</button>
+        </div>
+        <div id="local-source" class="source-panel">
+          <label class="drop-zone" id="drop-zone" for="file-input">
+            <input id="file-input" type="file" multiple>
+            <span class="upload-icon">↑</span><strong>Drop files to get started</strong><span class="drop-help">or <span class="accent-text">browse your device</span></span><span class="file-limit">Files are processed locally where supported</span>
+          </label>
+        </div>
+        <div id="url-source" class="source-panel hidden">
+          <form id="url-form" class="url-form"><label for="url-input">Direct file URL</label><div class="url-row"><input id="url-input" type="url" placeholder="https://example.com/file.pdf" required><button class="primary-btn" type="submit">Open URL <span>↗</span></button></div><p class="field-note">The server must allow browser access (CORS). Some URLs require authentication or cannot be previewed.</p></form>
+        </div>
+        <div id="file-list-wrap" class="file-list-wrap hidden"><div class="list-head"><span>SELECTED FILES</span><button id="clear-files" class="text-btn" type="button">Clear all</button></div><div id="file-list" class="file-list"></div></div>
+      </section>
+
+      <section class="tool-grid">
+        <article class="tool-card preview-card">
+          <div class="card-top"><span class="tool-icon purple">◫</span><span class="card-index">TOOL / 02</span></div>
+          <h3>File preview</h3><p>Inspect supported images, PDFs, text, audio, video, and code in one workspace.</p>
+          <div class="format-row"><span>PNG</span><span>JPG</span><span>PDF</span><span>TXT</span><span>MP4*</span></div>
+          <button id="preview-action" class="secondary-btn" type="button" disabled>Preview selected file <span>→</span></button>
+        </article>
+        <article class="tool-card convert-card">
+          <div class="card-top"><span class="tool-icon mint">⇄</span><span class="card-index">TOOL / 03</span></div>
+          <h3>Quick convert</h3><p>Convert images between common formats or turn an image into a PDF.</p>
+          <label class="select-label" for="format-select">OUTPUT FORMAT</label>
+          <div class="convert-row"><select id="format-select" disabled><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option><option value="application/pdf">PDF</option></select><button id="convert-action" class="primary-btn" type="button" disabled>Convert <span>↗</span></button></div>
+          <p class="tiny-note">Image conversion is browser-based. PDF export uses a small external library loaded from a CDN.</p>
+        </article>
+      </section>
+
+      <section id="preview-section" class="preview-section hidden">
+        <div class="workspace-heading"><div><div class="section-kicker">INSPECT / 04</div><h2 id="preview-title">Preview</h2></div><button id="close-preview" class="text-btn" type="button">Close preview ×</button></div>
+        <div id="preview-content" class="preview-content"></div>
+      </section>
+      <div id="status" class="status-message" role="status" aria-live="polite"></div>
+
+      <section class="capabilities">
+        <div><div class="section-kicker">BUILT FOR EVERYDAY FILES</div><h2>Simple tools.<br><span>Clear limits.</span></h2></div>
+        <div class="capability-list">
+          <div><span class="cap-number">01</span><div><strong>Browser-first privacy</strong><p>Selected files are not sent to OmniFile servers. URL imports are fetched directly by your browser.</p></div></div>
+          <div><span class="cap-number">02</span><div><strong>Honest format support</strong><p>Preview and conversion depend on the browser, the source format, and any available libraries.</p></div></div>
+          <div><span class="cap-number">03</span><div><strong>Local tools can go further</strong><p>For advanced media conversions, use the optional local Python service and install the required system tools.</p></div></div>
+        </div>
+      </section>
+    </main>
+    <footer><a class="brand footer-brand" href="./"><span class="brand-mark">O</span><span>Omni<span class="brand-light">File</span></span></a><span>Useful file tools, without the mystery.</span><a href="https://github.com/ericsnet/OmniFile">Open source project ↗</a></footer>
+  </div>
+</body>
+</html>

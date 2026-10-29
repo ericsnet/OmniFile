@@ -1,0 +1,9 @@
+{
+  "name": "omnifile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-first file viewer and converter",
+  "scripts": {
+    "start": "python -m http.server 8000"
+  }
+}
