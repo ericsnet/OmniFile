@@ -128,7 +128,10 @@
     if (exact[core]) return lead + exact[core] + trail;
     let m;
     if ((m = core.match(/^(\d+) file\(s\) added\. Select one to preview or convert\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
-    if ((m = core.match(/^Added (\d+) file\(s\)\. Select one to preview or convert\\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
+    if ((m = core.match(/^Added (\d+) file\(s\)\. Select one to preview or convert\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
+    if ((m = core.match(/^Download page (\d+) as PNG$/))) return lead + 'Descargar página ' + m[1] + ' como PNG' + trail;
+    if ((m = core.match(/^PDF page (\d+)$/))) return lead + 'Página PDF ' + m[1] + trail;
+    if ((m = core.match(/^Document opened with (\d+) conversion note\(s\)\.$/))) return lead + 'Documento abierto con ' + m[1] + ' aviso(s) de conversión.' + trail;
     if ((m = core.match(/^Rendering PDF page (\d+) of (\d+)…$/))) return lead + 'Procesando página PDF ' + m[1] + ' de ' + m[2] + '…' + trail;
     if ((m = core.match(/^Rendered (\d+) PDF page\(s\)\\. Use each link to save a PNG\\.$/))) return lead + 'Procesadas ' + m[1] + ' página(s) del PDF. Usa cada enlace para guardar un PNG.' + trail;
     if (core.startsWith('Could not preview this DOCX file: ')) return lead + 'No se ha podido previsualizar este DOCX: ' + core.slice(33) + trail;
@@ -189,6 +192,8 @@
     language = next === 'es' ? 'es' : 'en';
     document.documentElement.lang = language;
     document.title = language === 'es' ? 'OmniFile — Herramientas para archivos en un solo lugar' : 'OmniFile — File tools, in one place';
+    const description = document.querySelector('meta[name="description"]');
+    if (description) description.content = language === 'es' ? 'OmniFile — Previsualiza archivos y convierte formatos habituales en tu navegador.' : 'OmniFile — preview files and convert common formats in your browser.';
     const selector = document.getElementById('language-select');
     if (selector) selector.value = language;
     translateNode(document.body);
