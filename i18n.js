@@ -128,7 +128,7 @@
     if (exact[core]) return lead + exact[core] + trail;
     let m;
     if ((m = core.match(/^(\d+) file\(s\) added\. Select one to preview or convert\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
-    if ((m = core.match(/^Added (\d+) file\(s\)\\. Select one to preview or convert\\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
+    if ((m = core.match(/^Added (\d+) file\(s\)\. Select one to preview or convert\\.$/))) return lead + 'Se han añadido ' + m[1] + ' archivo(s). Selecciona uno para previsualizarlo o convertirlo.' + trail;
     if ((m = core.match(/^Rendering PDF page (\d+) of (\d+)…$/))) return lead + 'Procesando página PDF ' + m[1] + ' de ' + m[2] + '…' + trail;
     if ((m = core.match(/^Rendered (\d+) PDF page\(s\)\\. Use each link to save a PNG\\.$/))) return lead + 'Procesadas ' + m[1] + ' página(s) del PDF. Usa cada enlace para guardar un PNG.' + trail;
     if (core.startsWith('Could not preview this DOCX file: ')) return lead + 'No se ha podido previsualizar este DOCX: ' + core.slice(33) + trail;
