@@ -36,6 +36,7 @@
     'INSPECT / 04':'INSPECCIÓN / 04',
     'Preview':'Vista previa',
     'Close preview':'Cerrar vista previa',
+    'Close preview ×':'Cerrar vista previa ×',
     'BUILT FOR EVERYDAY FILES':'DISEÑADO PARA ARCHIVOS DEL DÍA A DÍA',
     'Simple tools.':'Herramientas sencillas.',
     'Clear limits.':'Límites claros.',
@@ -90,7 +91,8 @@
     if (node.nodeType === Node.TEXT_NODE) {
       if (!originals.has(node)) originals.set(node, node.nodeValue);
       const original = originals.get(node);
-      node.nodeValue = language === 'es' ? translateText(original) : original;
+      const translated = language === 'es' ? translateText(original) : original;
+      if (node.nodeValue !== translated) node.nodeValue = translated;
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       if (node.matches('input#url-input')) node.placeholder = language === 'es' ? 'https://ejemplo.com/archivo.pdf' : 'https://example.com/file.pdf';
       if (node.matches('#language-select')) node.setAttribute('aria-label', language === 'es' ? 'Idioma' : 'Language');
@@ -134,7 +136,9 @@
         else if (record.type === 'characterData') {
           const node = record.target;
           if (!originals.has(node)) originals.set(node, node.nodeValue);
-          node.nodeValue = language === 'es' ? translateText(originals.get(node)) : originals.get(node);
+          const original = originals.get(node);
+          const translated = language === 'es' ? translateText(original) : original;
+          if (node.nodeValue !== translated) node.nodeValue = translated;
         }
       }
     });
