@@ -23,7 +23,7 @@
     zip: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',()=>!!window.JSZip);return window.JSZip;},
     mammoth: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js',()=>!!window.mammoth);return window.mammoth;},
     sheet: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',()=>!!window.XLSX);return window.XLSX;},
-    markdown: async()=>{await loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js',()=>!!window.marked);await loadScript('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js',()=>!!window.DOMPurify);return {marked:window.marked,DOMPurify:window.DOMPurify};}
+    markdown: async()=>{await loadScript('https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js',()=>!!window.marked);await loadScript('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js',()=>!!window.DOMPurify);return {marked:window.marked,DOMPurify:window.DOMPurify};}
   };
   function ensurePreviewTools(){
     if (!$('#audio-visualizer-style')) { const style=document.createElement('style'); style.id='audio-visualizer-style'; style.textContent=`
@@ -149,7 +149,7 @@
     else if(e==='md'||e==='markdown'){
       const raw=await file.text();
       try{const {marked,DOMPurify}=await libs.markdown();const html=marked.parse(raw,{gfm:true,breaks:false});const article=document.createElement('article');article.className='markdown-preview';article.innerHTML=DOMPurify.sanitize(html,{USE_PROFILES:{html:true}});article.querySelectorAll('a').forEach(link=>{link.target='_blank';link.rel='noopener noreferrer';});previewContent.append(article);}
-      catch(err){textPreview('Could not render Markdown: '+err.message+'\\n\\n'+raw);setStatus('Markdown renderer could not be loaded. Check your internet connection.',true);}
+      catch(err){textPreview('Could not render Markdown: '+err.message+'\n\n'+raw);setStatus('Markdown renderer could not be loaded. Check your internet connection.',true);}
     }
     else if(mime.startsWith('text/')||/\.(txt|md|json|js|ts|jsx|tsx|css|html|xml|csv|yml|yaml|log|py|rs|sh|toml|ini|conf|sql|java|c|h|cpp|go|php|rb|swift|kt|vue|svelte|graphql|tex|rtf|ics|vcf|m3u|pls|lrc|srt|vtt|ass|ssa)$/i.test(file.name)){
       const raw=await file.text();
