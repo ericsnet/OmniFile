@@ -159,6 +159,109 @@
     return Array.from([...doc.getElementsByTagNameNS(ns,'h'),...doc.getElementsByTagNameNS(ns,'p')]).sort((x,y)=>x.compareDocumentPosition(y)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1).map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
   }
 
+  async function extractEpubText(file){
+    const JSZip=await libs.zip(),zip=await JSZip.loadAsync(file);
+    const container=zip.file('META-INF/container.xml');
+    if(!container)throw new Error('The EPUB container metadata is missing.');
+    const containerDoc=new DOMParser().parseFromString(await container.async('text'),'application/xml');
+    const rootPath=containerDoc.getElementsByTagNameNS('*','rootfile')[0]?.getAttribute('full-path');
+    if(!rootPath||!zip.file(rootPath))throw new Error('The EPUB package document could not be found.');
+    const opf=new DOMParser().parseFromString(await zip.file(rootPath).async('text'),'application/xml');
+    if(opf.querySelector('parsererror'))throw new Error('The EPUB package document contains invalid XML.');
+    const manifest=new Map(Array.from(opf.getElementsByTagNameNS('*','item')).map(item=>[item.getAttribute('id'),item.getAttribute('href')]));
+    const spine=Array.from(opf.getElementsByTagNameNS('*','itemref'));
+    const base=rootPath.includes('/')?rootPath.slice(0,rootPath.lastIndexOf('/')+1):'';
+    const output=[];
+    for(const item of spine){
+      const href=manifest.get(item.getAttribute('idref'));
+      if(!href)continue;
+      const path=(base+decodeURIComponent(href.split('#')[0])).replace(/\/+/g,'/');
+      const entry=zip.file(path);
+      if(!entry)continue;
+      const doc=new DOMParser().parseFromString(await entry.async('text'),'text/html');
+      const text=(doc.body?.textContent||doc.documentElement?.textContent||'').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+      if(text)output.push(text);
+      if(output.join('\n\n').length>2_000_000)break;
+    }
+    if(!output.length)throw new Error('No readable EPUB text was found in the reading order.');
+    return output.join('\n\n');
+  }
+  function rtfToText(raw){
+    let out='',depth=0,skip=0;
+    for(let i=0;i<raw.length;i++){
+      const c=raw[i];
+      if(c==='{'){depth++;continue;}
+      if(c==='}'){depth=Math.max(0,depth-1);if(skip>depth)skip=0;continue;}
+      if(c==='\\'){
+        const next=raw[++i];if(!next)break;
+        if(next==='\\'||next==='{'||next==='}') {if(!skip)out+=next;continue;}
+        if(next==="'"){const hex=raw.slice(i+1,i+3);if(!skip&&/^[0-9a-f]{2}$/i.test(hex))out+=String.fromCharCode(parseInt(hex,16));i+=2;continue;}
+        if(!/[a-z]/i.test(next)){if(next==='~'&&!skip)out+='\u00a0';else if((next==='-'||next==='_')&&!skip)out+=next==='-'?'\u00ad':'\u2011';continue;}
+        let word=next;while(i+1<raw.length&&/[a-z]/i.test(raw[i+1]))word+=raw[++i];
+        let num='';if(raw[i+1]==='-'){num='-';i++;}while(i+1<raw.length&&/\d/.test(raw[i+1]))num+=raw[++i];
+        if(raw[i+1]===' ')i++;
+        if(['fonttbl','colortbl','stylesheet','info','pict','object','header','footer','generator','xmlnstbl'].includes(word))skip=depth;
+        if(skip)continue;
+        if(word==='u'&&num){let n=Number(num);out+=String.fromCharCode(n<0?n+65536:n);if(raw[i+1]==='?')i++;}
+        else if(word==='par'||word==='line')out+='\n';
+        else if(word==='tab')out+='\t';
+        continue;
+      }
+      if(!skip&&c!=='\r'&&c!=='\n')out+=c;
+    }
+    return out.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
+  }
+  function unfoldCalendar(raw){return raw.replace(/\r?\n[ \t]/g,'');}
+  function calendarDate(value){
+    if(!value)return '';
+    const v=value.replace(/Z$/,'');
+    const m=v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?)?$/);
+    if(!m)return value;
+    const date=m[3]+'/'+m[2]+'/'+m[1];
+    return m[4]?date+' '+m[4]+':'+m[5]+(m[6]?':'+m[6]:'')+(value.endsWith('Z')?' UTC':''):date;
+  }
+  function calendarEvents(raw){
+    const text=unfoldCalendar(raw),blocks=text.split(/BEGIN:VEVENT/i).slice(1).map(x=>x.split(/END:VEVENT/i)[0]);
+    return blocks.map(block=>{
+      const fields={};
+      block.split(/\r?\n/).forEach(line=>{
+        const m=line.match(/^([^:;]+)(?:;[^:]*)?:(.*)$/);
+        if(m&&!fields[m[1].toUpperCase()])fields[m[1].toUpperCase()]=m[2].replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
+      });
+      return fields;
+    }).filter(x=>Object.keys(x).length);
+  }
+  function vcardRecords(raw){
+    const text=unfoldCalendar(raw);
+    return text.split(/BEGIN:VCARD/i).slice(1).map(x=>x.split(/END:VCARD/i)[0]).map(block=>{
+      const fields={};
+      block.split(/\r?\n/).forEach(line=>{
+        const m=line.match(/^([^:;]+)(?:;[^:]*)?:(.*)$/);
+        if(!m)return;
+        const key=m[1].toUpperCase(),value=m[2].replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
+        (fields[key]||(fields[key]=[])).push(value);
+      });
+      return fields;
+    }).filter(x=>Object.keys(x).length);
+  }
+  function structuredCards(items,kind){
+    const wrap=document.createElement('div');wrap.className='structured-preview';
+    const fields=kind==='calendar'?[['SUMMARY','Title'],['DTSTART','Start'],['DTEND','End'],['LOCATION','Location'],['DESCRIPTION','Description']]:[['FN','Name'],['ORG','Organisation'],['TITLE','Role'],['TEL','Phone'],['EMAIL','Email'],['URL','Website'],['ADR','Address']];
+    items.forEach((item,index)=>{
+      const card=document.createElement('section');card.className='slide-preview';
+      const heading=document.createElement('h3');heading.textContent=(kind==='calendar'?'Event ':'Contact ')+(index+1);card.append(heading);
+      const table=document.createElement('table');
+      fields.forEach(([key,label])=>{
+        const values=item[key];if(!values?.length)return;
+        const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');
+        th.textContent=label;td.textContent=key==='DTSTART'||key==='DTEND'?calendarDate(values[0]):values.join(', ');
+        tr.append(th,td);table.append(tr);
+      });
+      if(table.children.length)card.append(table);else{const p=document.createElement('p');p.textContent='No recognized fields in this record.';card.append(p);}
+      wrap.append(card);
+    });
+    previewContent.append(wrap);
+  }
   function sandboxFrame(title, source, height=520){
     const frame=document.createElement('iframe');
     frame.className='code-sandbox-frame';frame.title=title;frame.setAttribute('sandbox','');frame.referrerPolicy='no-referrer';
@@ -282,7 +385,23 @@ self.onmessage=async()=>{
     }
     else if(/\.(docx)$/i.test(file.name)){const m=document.createElement('p');m.textContent='Loading Word document preview…';previewContent.append(m);try{const mammoth=await libs.mammoth();const result=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});m.remove();textPreview(result.value); }catch(err){m.textContent='Could not preview this DOCX file: '+err.message;}}
     else if(/\.(xlsx|xls|ods)$/i.test(file.name)){try{const XLSX=await libs.sheet();const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellFormula:false});if(!wb.SheetNames.length)throw new Error('No worksheets were found.');const wrap=document.createElement('div');wrap.className='structured-preview';const select=document.createElement('select');const renderSheet=name=>{wrap.replaceChildren();const sheet=wb.Sheets[name];if(!sheet)throw new Error('The selected worksheet could not be read.');const range=sheet['!ref']?XLSX.utils.decode_range(sheet['!ref']):{s:{r:0,c:0},e:{r:-1,c:-1}};const totalRows=Math.max(0,range.e.r-range.s.r+1),totalCols=Math.max(0,range.e.c-range.s.c+1);const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false,blankrows:true}).slice(0,500);const note=document.createElement('p');note.className='conversion-help';note.textContent=totalRows+' rows · '+totalCols+' columns · '+wb.SheetNames.length+' worksheet(s)';const table=document.createElement('table');rows.forEach((row,i)=>{const tr=document.createElement('tr');row.slice(0,50).forEach(value=>{const cell=document.createElement(i===0?'th':'td');cell.textContent=String(value??'');tr.append(cell);});table.append(tr);});wrap.append(note,table);if(totalRows>500||totalCols>50){const limit=document.createElement('p');limit.className='conversion-help';limit.textContent='Preview limited to 500 rows and 50 columns. Conversion remains available for the selected workbook.';wrap.append(limit);}};wb.SheetNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;select.append(o);});select.addEventListener('change',()=>renderSheet(select.value));previewContent.append(select,wrap);renderSheet(wb.SheetNames[0]);}catch(err){textPreview('Could not preview spreadsheet: '+err.message);}}
-    else if(/\.(zip|cbz|epub)$/i.test(file.name)){try{const JSZip=await libs.zip();const zip=await JSZip.loadAsync(file);const list=document.createElement('div');list.className='archive-list';Object.values(zip.files).filter(x=>!x.dir).forEach(entry=>{const row=document.createElement('div');row.className='file-row';const name=document.createElement('span');name.textContent=entry.name;const download=document.createElement('button');download.className='text-btn';download.textContent='Extract';download.addEventListener('click',async()=>{const blob=await entry.async('blob');downloadBlob(blob,entry.name.split('/').pop()||'extracted-file');});row.append(name,download);list.append(row);});previewContent.append(list);}catch(err){textPreview('Could not open archive: '+err.message);}}
+    else if(e==='epub'){
+      try{textPreview(await extractEpubText(file));setStatus('Extracted EPUB text in reading order. Images and page layout are not rendered.');}
+      catch(err){textPreview('Could not preview EPUB: '+err.message);}
+    }
+    else if(e==='rtf'){
+      try{textPreview(rtfToText(await file.text()));}
+      catch(err){textPreview('Could not extract RTF text: '+err.message);}
+    }
+    else if(e==='ics'){
+      try{const events=calendarEvents(await file.text());if(!events.length)throw new Error('No VEVENT records were found.');structuredCards(events,'calendar');setStatus('Read '+events.length+' calendar event(s).');}
+      catch(err){textPreview('Could not read calendar: '+err.message);}
+    }
+    else if(e==='vcf'){
+      try{const contacts=vcardRecords(await file.text());if(!contacts.length)throw new Error('No vCard records were found.');structuredCards(contacts,'contacts');setStatus('Read '+contacts.length+' contact card(s).');}
+      catch(err){textPreview('Could not read contacts: '+err.message);}
+    }
+    else if(/\.(zip|cbz)$/i.test(file.name)){try{const JSZip=await libs.zip();const zip=await JSZip.loadAsync(file);const list=document.createElement('div');list.className='archive-list';Object.values(zip.files).filter(x=>!x.dir).forEach(entry=>{const row=document.createElement('div');row.className='file-row';const name=document.createElement('span');name.textContent=entry.name;const download=document.createElement('button');download.className='text-btn';download.textContent='Extract';download.addEventListener('click',async()=>{const blob=await entry.async('blob');downloadBlob(blob,entry.name.split('/').pop()||'extracted-file');});row.append(name,download);list.append(row);});previewContent.append(list);}catch(err){textPreview('Could not open archive: '+err.message);}}
     else if(mime.startsWith('video/')||/\.(mp4|webm|ogv|mov|m4v|mkv|avi|mpeg|mpg|3gp)$/i.test(file.name)){const video=document.createElement('video');video.controls=true;video.src=url;video.className='file-preview-image';previewContent.append(video);const note=document.createElement('p');note.className='conversion-help';note.textContent='Playback depends on browser codec support; this does not transcode the video.';previewContent.append(note);}
     else if(e==='yaml'||e==='yml'){
       const raw=await file.text();
@@ -294,7 +413,7 @@ self.onmessage=async()=>{
       try{const {marked,DOMPurify}=await libs.markdown();const html=marked.parse(raw,{gfm:true,breaks:false});const article=document.createElement('article');article.className='markdown-preview';article.innerHTML=DOMPurify.sanitize(html,{USE_PROFILES:{html:true},FORBID_TAGS:['style','iframe','object','embed','form','input','button','video','audio','source','link','meta','base','svg','math'],FORBID_ATTR:['style']});article.querySelectorAll('a').forEach(link=>{link.target='_blank';link.rel='noopener noreferrer';});previewContent.append(article);}
       catch(err){textPreview('Could not render Markdown: '+err.message+'\n\n'+raw);setStatus('Markdown renderer could not be loaded. Check your internet connection.',true);}
     }
-    else if(mime.startsWith('text/')||/\.(txt|md|json|ipynb|jsonl|ndjson|js|mjs|cjs|ts|jsx|tsx|css|scss|less|html|htm|xml|xsd|xsl|svg|csv|tsv|yml|yaml|log|py|pyw|rs|sh|bash|zsh|fish|bat|cmd|ps1|toml|ini|conf|env|properties|sql|java|c|h|cpp|hpp|cc|go|php|rb|swift|kt|kts|vue|svelte|graphql|proto|tex|rtf|ics|vcf|m3u|m3u8|pls|lrc|srt|vtt|ass|ssa|diff|patch|dockerfile|makefile|r|lua|pl|dart|ex|exs|scala)$/i.test(file.name)){
+    else if(mime.startsWith('text/')||/\.(txt|md|json|ipynb|jsonl|ndjson|js|mjs|cjs|ts|jsx|tsx|css|scss|less|html|htm|xml|xsd|xsl|svg|csv|tsv|yml|yaml|log|py|pyw|rs|sh|bash|zsh|fish|bat|cmd|ps1|toml|ini|conf|env|properties|sql|java|c|h|cpp|hpp|cc|go|php|rb|swift|kt|kts|vue|svelte|graphql|proto|tex|m3u|m3u8|pls|lrc|srt|vtt|ass|ssa|diff|patch|dockerfile|makefile|r|lua|pl|dart|ex|exs|scala|rtf|ics|vcf)$/i.test(file.name)){
       const raw=await file.text();
       if(e==='json'){try{textPreview(JSON.stringify(JSON.parse(raw),null,2));}catch(_){textPreview(raw);}}
       else if(e==='csv'||e==='tsv'){const delimiter=e==='tsv'?'\t':detectDelimiter(raw),rows=csvToRows(raw,delimiter),table=document.createElement('div');table.className='structured-preview';const note=document.createElement('p');note.className='conversion-help';note.textContent=rows.length+' rows · '+Math.max(0,...rows.map(row=>row.length))+' columns · delimiter '+(delimiter==='\t'?'TAB':delimiter);const t=document.createElement('table');rows.slice(0,500).forEach((row,i)=>{const tr=document.createElement('tr');row.slice(0,50).forEach(cell=>{const td=document.createElement(i===0?'th':'td');td.textContent=cell;tr.append(td);});t.append(tr);});table.append(note,t);if(rows.length>500){const limit=document.createElement('p');limit.className='conversion-help';limit.textContent='Preview limited to the first 500 rows and 50 columns; conversion processes the full file.';table.append(limit);}previewContent.append(table);}
