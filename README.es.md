@@ -77,7 +77,8 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Conversión de imágenes | PNG, JPEG, WebP y PDF; depende de los codificadores del navegador |
 | Conversión de PDF | Páginas PDF a PNG/JPEG y texto PDF a TXT; las imágenes multipágina se agrupan en ZIP |
 | Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
-| Vista previa/conversión de Office | DOCX (HTML/TXT), ODT (texto) y PPTX (texto de diapositivas); XLSX/XLS/ODS (primera hoja a CSV/JSON) |\n| YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
+| Vista previa/conversión de Office | DOCX (HTML/TXT), ODT (texto) y PPTX (texto de diapositivas); XLSX/XLS/ODS (vista previa de hojas seleccionables; la exportación CSV/JSON usa la primera hoja) |\n| Interpretación de código | Vista visual HTML/CSS aislada; Python mediante Pyodide/WebAssembly; JavaScript mediante un Worker dedicado |
+| YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
 | Vista previa de archivos comprimidos | Listado ZIP, CBZ y EPUB, con extracción individual; no renderiza el EPUB como libro completo |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
