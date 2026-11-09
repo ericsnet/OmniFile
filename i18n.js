@@ -176,7 +176,17 @@
     'No readable EPUB text was found in the reading order.':'No se ha encontrado texto legible en el orden de lectura del EPUB.',
     'No VEVENT records were found.':'No se han encontrado eventos VEVENT.',
     'No vCard records were found.':'No se han encontrado registros vCard.',
-    'No calendar or contact records were found.':'No se han encontrado registros de calendario ni de contactos.'
+    'No calendar or contact records were found.':'No se han encontrado registros de calendario ni de contactos.',
+    'FictionBook':'FictionBook',
+    'FictionBook XML is not well-formed.':'El XML FictionBook no está bien formado.',
+    'The FictionBook body section is missing.':'Falta la sección principal del libro FictionBook.',
+    'Could not preview FictionBook: ':'No se ha podido previsualizar FictionBook: ',
+    'No playlist entries were found.':'No se han encontrado entradas en la lista de reproducción.',
+    'Could not preview playlist: ':'No se ha podido previsualizar la lista de reproducción: ',
+    'playlist entries':'entradas en la lista de reproducción',
+    'Duration (s)':'Duración (s)',
+    'File / URL':'Archivo / URL',
+    'Variant stream':'Flujo alternativo'
 
   };
   const attrs = {
