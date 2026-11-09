@@ -442,6 +442,8 @@ self.onmessage=async()=>{
     else if(e==='json')opts=[['text/csv','CSV spreadsheet'],['application/pdf','PDF document'],['text/yaml','YAML document'],['text/plain','Pretty JSON (.json)']];
     else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data']];
     else if(e==='pptx'||e==='odt')opts=[['text/plain','Extract text (.txt)']];
+    else if(e==='epub'||e==='rtf')opts=[['text/plain','Extract text (.txt)']];
+    else if(e==='ics'||e==='vcf')opts=[['application/json','JSON data']];
     else if(e==='csv'||e==='tsv')opts=[['application/json','JSON data'],['application/pdf','PDF document'],['text/csv','CSV']];
     else if(mime.startsWith('text/')||/\.(txt|md|html|xml|log|srt|vtt)$/i.test(file.name))opts=[['application/pdf','PDF document'],['text/plain','Plain text (.txt)'],['text/html','HTML document']];
     else if(e==='docx')opts=[['text/html','HTML document'],['text/plain','Plain text (.txt)']];
@@ -498,6 +500,19 @@ self.onmessage=async()=>{
         const yaml=await libs.yaml(),parsed=yaml.load(await file.text());
         if(target==='application/json')downloadBlob(new Blob([JSON.stringify(parsed,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.json');
         else downloadBlob(new Blob([String(await file.text())],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.txt');
+      }
+      else if(ext(file)==='epub'){
+        const text=await extractEpubText(file);
+        downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.epub$/i,'')+'.txt');
+      }
+      else if(ext(file)==='rtf'){
+        const text=rtfToText(await file.text());
+        downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.rtf$/i,'')+'.txt');
+      }
+      else if(ext(file)==='ics'||ext(file)==='vcf'){
+        const raw=await file.text(),records=ext(file)==='ics'?calendarEvents(raw):vcardRecords(raw);
+        if(!records.length)throw new Error('No calendar or contact records were found.');
+        downloadBlob(new Blob([JSON.stringify(records,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.(ics|vcf)$/i,'')+'.json');
       }
       else if(ext(file)==='pptx'){
         const slides=await extractPptxText(file),text=slides.map(x=>'--- Slide '+x.number+' ---\n'+x.text).join('\n\n');
