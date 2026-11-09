@@ -162,6 +162,12 @@
     if (core === 'PDF export library did not load. Check your internet connection and reload the page.') return lead + 'No se ha cargado la biblioteca de exportación a PDF. Comprueba la conexión a Internet y recarga la página.' + trail;
     if (core === 'This image could not be encoded in the selected format.') return lead + 'No se ha podido codificar la imagen en el formato seleccionado.' + trail;
     if (core.startsWith('Could not fetch this URL. It may block cross-origin requests (CORS), require sign-in, or not be a direct file link. ')) return lead + 'No se ha podido obtener esta URL. Puede bloquear solicitudes de otros orígenes (CORS), requerir inicio de sesión o no ser un enlace directo al archivo. ' + core.slice('Could not fetch this URL. It may block cross-origin requests (CORS), require sign-in, or not be a direct file link. '.length) + trail;
+    if ((m = core.match(/^Slide (\\d+)$/))) return lead + 'Diapositiva ' + m[1] + trail;
+    if ((m = core.match(/^Extracted text from (\\d+) presentation slide\\(s\\)\\. Images and animations are not rendered\\.$/))) return lead + 'Texto extraído de ' + m[1] + ' diapositiva(s). No se muestran imágenes ni animaciones.' + trail;
+    if (core.startsWith('Could not preview PPTX: ')) return lead + 'No se ha podido previsualizar el PPTX: ' + core.slice(24) + trail;
+    if (core.startsWith('Could not preview ODT: ')) return lead + 'No se ha podido previsualizar el ODT: ' + core.slice(22) + trail;
+    if (core.startsWith('Could not parse YAML: ')) return lead + 'No se ha podido interpretar el YAML: ' + core.slice(21) + trail;
+    if (core.startsWith('Could not preview this DOCX file: ')) return lead + 'No se ha podido previsualizar este DOCX: ' + core.slice(33) + trail;
     return raw;
   };
   let language = 'en';
