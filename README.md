@@ -17,6 +17,7 @@ OmniFile is a static web app that can be published on GitHub Pages and opened lo
 - Convert images between PNG, JPEG, WebP, and PDF.
 - Convert PDF pages to PNG/JPEG (one page per image; multi-page output is bundled into ZIP), or extract PDF text.
 - Preview YAML and convert YAML to JSON; convert JSON to YAML, alongside text, Markdown, HTML, CSV/TSV, DOCX, and spreadsheet conversions to supported outputs such as PDF, HTML, TXT, CSV, or JSON.
+- Parse quoted CSV/TSV fields (including delimiters inside quoted values and multiline cells), detect common CSV delimiters, and inspect JSONL/NDJSON records line by line.
 - Process selected local files in the browser; OmniFile does not upload those files to an OmniFile backend.
 - Start the local web app with one launcher script; no Node.js packages or Python dependencies are required.
 - Switch the interface between English and Spanish using the language selector in the top bar.
@@ -71,7 +72,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | Embedded audio lyrics | ID3 USLT/SYLT plus detected LYRICS/UNSYNCEDLYRICS comments; only if metadata exists |
 | Image to PDF | Yes, via jsPDF CDN; image is placed on a PDF page |
 | PDF preview | Browser PDF viewer support required |
-| Text and source preview | TXT, Markdown, JSON/JSONL, YAML, TOML, INI, XML, HTML, CSV/TSV, subtitles, logs, and many programming languages; capped at 2 MB of text |
+| Text and source preview | TXT, Markdown, JSON/JSONL, YAML, TOML, INI, XML, HTML, CSV/TSV, subtitles, logs, and many programming languages; plain-text preview capped at 2 MB |
 | Audio/video preview | Browser-supported codecs and containers only |
 | MP4 to MP3 | **Not implemented in the web version** |
 | Office documents, archives, CAD, 3D, proprietary formats | **No universal support yet**; format-specific libraries or external local tools are needed |
