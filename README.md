@@ -69,7 +69,8 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | Image conversion | PNG, JPEG, WebP, PDF; actual output depends on browser encoder support |
 | PDF conversion | PDF pages to PNG/JPEG and PDF text to TXT; multi-page images are bundled in ZIP |
 | Text/data conversion | TXT/Markdown/HTML to PDF/HTML/TXT; JSON ↔ CSV for supported object arrays/tables |
-| Office preview/conversion | DOCX (HTML/TXT), ODT (text), PPTX (slide text); XLSX/XLS/ODS (first sheet to CSV/JSON) |\n| YAML | Parsed preview as JSON; YAML to JSON and JSON to YAML conversion |
+| Office preview/conversion | DOCX (HTML/TXT), ODT (text), PPTX (slide text); XLSX/XLS/ODS (selectable worksheet preview; CSV/JSON export uses the first sheet) |\n| Code interpretation | Sandboxed HTML/CSS preview; Python via Pyodide/WebAssembly; JavaScript via a dedicated Worker |
+| YAML | Parsed preview as JSON; YAML to JSON and JSON to YAML conversion |
 | Archive preview | ZIP, CBZ, EPUB file listing and individual-file extraction; not full EPUB rendering |
 | Embedded audio lyrics | ID3 USLT/SYLT plus detected LYRICS/UNSYNCEDLYRICS comments; only if metadata exists |
 | Image to PDF | Yes, via jsPDF CDN; image is placed on a PDF page |
