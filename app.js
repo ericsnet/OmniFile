@@ -167,7 +167,7 @@
   }
   function previewHtml(raw){
     const policy="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data: blob:; media-src data: blob:; style-src 'unsafe-inline'; font-src data:; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">";
-    const src= /<head[\\s>]/i.test(raw) ? raw.replace(/<head([^>]*)>/i,'<head$1>'+policy) : '<!doctype html><html><head><meta charset="utf-8">'+policy+'</head><body>'+raw+'</body></html>';
+    const src= /<head[\s>]/i.test(raw) ? raw.replace(/<head([^>]*)>/i,'<head$1>'+policy) : '<!doctype html><html><head><meta charset="utf-8">'+policy+'</head><body>'+raw+'</body></html>';
     const note=document.createElement('p');note.className='conversion-help';note.textContent='Sandboxed HTML preview: scripts, network requests, forms, pop-ups and access to the parent page are disabled.';
     previewContent.append(note,sandboxFrame('Sandboxed HTML preview',src,560));
   }
@@ -193,7 +193,7 @@
     const finish=(message,isError=false,append=false)=>{const prior=append&&output.textContent&&!output.textContent.startsWith('Running')?output.textContent:'';cleanup();output.textContent=[prior,message||'(No output)'].filter(Boolean).join(prior&&message?'\n':'');setStatus(isError?'Execution finished with an error.':'Execution finished.');};
     stop.addEventListener('click',()=>{cleanup();output.textContent+='\n\nExecution stopped.';setStatus('Code execution stopped.');});
     run.addEventListener('click',()=>{
-      cleanup();output.textContent=language==='Python'?'Loading Python WebAssembly runtime…':'Starting JavaScript worker…';run.disabled=true;stop.disabled=false;
+      cleanup();output.textContent=language==='Python'?'Loading Python WebAssembly runtime…':'Running JavaScript…';run.disabled=true;stop.disabled=false;
       try{
         let source;
         if(language==='Python'){
@@ -204,6 +204,10 @@ self.fetch=(input,init)=>{try{const u=new URL(typeof input==="string"?input:inpu
 if(self.WebSocket)self.WebSocket=undefined;
 if(self.EventSource)self.EventSource=undefined;
 if(self.XMLHttpRequest)self.XMLHttpRequest=undefined;
+if(self.Worker)self.Worker=undefined;
+if(self.SharedWorker)self.SharedWorker=undefined;
+if(self.importScripts)self.importScripts=undefined;
+if(self.WebTransport)self.WebTransport=undefined;
 let runtime;
 self.onmessage=async({data})=>{
  try{
