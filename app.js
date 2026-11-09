@@ -212,9 +212,9 @@ let runtime;
 self.onmessage=async({data})=>{
  try{
   runtime=runtime||await loadPyodide({indexURL:CDN});
+  await runtime.loadPackagesFromImports(data.code);
   self.postMessage({type:"ready"});
   const out=[];
-  await runtime.loadPackagesFromImports(data.code);
   runtime.setStdout({batched:s=>out.push(s)});
   runtime.setStderr({batched:s=>out.push(s)});
   const result=await runtime.runPythonAsync(data.code);
@@ -231,6 +231,7 @@ if(self.XMLHttpRequest)self.XMLHttpRequest=undefined;
 if(self.importScripts)self.importScripts=()=>{throw new Error("Loading external scripts is disabled.");};
 if(self.Worker)self.Worker=undefined;
 if(self.SharedWorker)self.SharedWorker=undefined;
+if(self.WebTransport)self.WebTransport=undefined;
 self.console={log:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),info:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),warn:(...v)=>emit({type:"log",text:"Warning: "+v.map(String).join(" ")}),error:(...v)=>emit({type:"log",text:"Error: "+v.map(String).join(" ")}),debug:(...v)=>emit({type:"log",text:v.map(String).join(" ")})};
 self.onmessage=async()=>{
  try{const result=await (async()=>{\n${raw}\n})();emit({type:"done",text:result===undefined?"":String(result)});}
