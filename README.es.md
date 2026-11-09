@@ -86,6 +86,12 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 
 «Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
 
+## Seguridad: el código subido nunca se ejecuta
+
+OmniFile trata los archivos de código, HTML, SVG, el contenido de documentos y las celdas de hojas de cálculo como **datos no confiables**. El código fuente se muestra como texto: la aplicación nunca lo evalúa, importa ni ejecuta. El HTML no se incrusta como una página activa; el SVG se muestra como texto; la vista previa DOCX extrae texto sin formato; las hojas de cálculo crean nodos DOM usando `textContent`; y los PDF se renderizan en un lienzo, no dentro de un marco. Markdown y el HTML generado desde DOCX se sanitizan antes de utilizarse. Una política CSP restrictiva bloquea scripts inline/eval, marcos y objetos de complementos.
+
+Este diseño aplica varias capas de protección en la vista previa del navegador, pero no garantiza que todos los analizadores de archivos de terceros o decodificadores multimedia estén libres de vulnerabilidades. Mantén el navegador actualizado y no consideres seguros los archivos de origen desconocido.
+
 ## Privacidad y límites
 
 - Los archivos seleccionados permanecen en el navegador y no se envían a un backend de OmniFile.
