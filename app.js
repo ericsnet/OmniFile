@@ -158,12 +158,108 @@
     const ns='urn:oasis:names:tc:opendocument:xmlns:text:1.0';
     return Array.from([...doc.getElementsByTagNameNS(ns,'h'),...doc.getElementsByTagNameNS(ns,'p')]).sort((x,y)=>x.compareDocumentPosition(y)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1).map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
   }
-  async function showPreview(file){
+
+  function sandboxFrame(title, source, height=520){
+    const frame=document.createElement('iframe');
+    frame.className='code-sandbox-frame';frame.title=title;frame.setAttribute('sandbox','');frame.referrerPolicy='no-referrer';
+    frame.style.width='100%';frame.style.height=height+'px';frame.style.border='1px solid var(--line)';frame.style.borderRadius='12px';frame.style.background='#fff';
+    frame.srcdoc=source;return frame;
+  }
+  function previewHtml(raw){
+    const policy="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data: blob:; media-src data: blob:; style-src 'unsafe-inline'; font-src data:; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">";
+    const src= /<head[\\s>]/i.test(raw) ? raw.replace(/<head([^>]*)>/i,'<head$1>'+policy) : '<!doctype html><html><head><meta charset="utf-8">'+policy+'</head><body>'+raw+'</body></html>';
+    const note=document.createElement('p');note.className='conversion-help';note.textContent='Sandboxed HTML preview: scripts, network requests, forms, pop-ups and access to the parent page are disabled.';
+    previewContent.append(note,sandboxFrame('Sandboxed HTML preview',src,560));
+  }
+  function previewCss(raw){
+    const policy="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'\">";
+    const src='<!doctype html><html><head><meta charset="utf-8">'+policy+'<style>'+raw+'</style></head><body><main class="demo"><span class="eyebrow">OMNIFILE CSS PREVIEW</span><h1>Style preview</h1><p>This sample page lets you inspect how your CSS rules affect common elements.</p><button type="button">Sample button</button><section class="card"><h2>Sample card</h2><p>Typography, spacing, colors and borders.</p><a href="#">Sample link</a></section><ul><li>List item one</li><li>List item two</li></ul><input placeholder="Sample input" aria-label="Sample input"><table><tr><th>Column</th><th>Value</th></tr><tr><td>Example</td><td>123</td></tr></table></main></body></html>';
+    const note=document.createElement('p');note.className='conversion-help';note.textContent='CSS is applied to a sample document inside a sandboxed frame. Scripts and network access are disabled.';
+    previewContent.append(note,sandboxFrame('Sandboxed CSS preview',src,520));
+  }
+  function codeRunner(file,language,raw){
+    const panel=document.createElement('section');panel.className='code-runner';
+    const head=document.createElement('div');head.className='code-runner-head';
+    const label=document.createElement('strong');label.textContent=language+' interpreter';
+    const run=document.createElement('button');run.type='button';run.className='primary-btn';run.textContent='Run code';
+    const stop=document.createElement('button');stop.type='button';stop.className='secondary-btn';stop.textContent='Stop';stop.disabled=true;
+    head.append(label,run,stop);
+    const explanation=document.createElement('p');explanation.className='conversion-help';
+    explanation.textContent=language==='Python'?'Runs with Pyodide (Python compiled to WebAssembly) in a dedicated Web Worker. No local Python installation or server is used.':'Runs in a dedicated Web Worker without DOM access. Network APIs and nested workers are disabled; this is not a full Node.js environment.';
+    const output=document.createElement('pre');output.className='code-runner-output';output.textContent='Press “Run code” to execute this file in the browser sandbox.';
+    panel.append(head,explanation,output);previewContent.append(panel);
+    let worker=null,loadTimer=null,runTimer=null;
+    const cleanup=()=>{if(loadTimer)clearTimeout(loadTimer);if(runTimer)clearTimeout(runTimer);loadTimer=runTimer=null;if(worker){worker.terminate();worker=null;}run.disabled=false;stop.disabled=true;};
+    const finish=(message,isError=false)=>{cleanup();output.textContent=message||'(No output)';setStatus(isError?'Execution finished with an error.':'Execution finished.');};
+    stop.addEventListener('click',()=>{cleanup();output.textContent+='\n\nExecution stopped.';setStatus('Code execution stopped.');});
+    run.addEventListener('click',()=>{
+      cleanup();output.textContent=language==='Python'?'Loading Python WebAssembly runtime…':'Starting JavaScript worker…';run.disabled=true;stop.disabled=false;
+      try{
+        let source;
+        if(language==='Python'){
+          source=`import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.mjs";
+const CDN="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/";
+const nativeFetch=self.fetch.bind(self);
+self.fetch=(input,init)=>{try{const u=new URL(typeof input==="string"?input:input.url,location.href);if(u.origin!=="https://cdn.jsdelivr.net")return Promise.reject(new Error("Network access is disabled in this code runner."));return nativeFetch(input,init);}catch(e){return Promise.reject(e);}};
+if(self.WebSocket)self.WebSocket=undefined;
+if(self.EventSource)self.EventSource=undefined;
+if(self.XMLHttpRequest)self.XMLHttpRequest=undefined;
+let runtime;
+self.onmessage=async({data})=>{
+ try{
+  runtime=runtime||await loadPyodide({indexURL:CDN});
+  const out=[];
+  runtime.setStdout({batched:s=>out.push(s)});
+  runtime.setStderr({batched:s=>out.push(s)});
+  const result=await runtime.runPythonAsync(data.code);
+  if(result!==undefined&&result!==null)out.push(String(result));
+  self.postMessage({type:"done",text:out.join("\\n")});
+ }catch(error){self.postMessage({type:"error",text:error?.stack||error?.message||String(error)});}
+};`;
+        }else{
+          source=`const emit=self.postMessage.bind(self);
+self.fetch=()=>Promise.reject(new Error("Network access is disabled in this code runner."));
+if(self.WebSocket)self.WebSocket=undefined;
+if(self.EventSource)self.EventSource=undefined;
+if(self.XMLHttpRequest)self.XMLHttpRequest=undefined;
+if(self.importScripts)self.importScripts=()=>{throw new Error("Loading external scripts is disabled.");};
+if(self.Worker)self.Worker=undefined;
+if(self.SharedWorker)self.SharedWorker=undefined;
+self.console={log:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),info:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),warn:(...v)=>emit({type:"log",text:"Warning: "+v.map(String).join(" ")}),error:(...v)=>emit({type:"log",text:"Error: "+v.map(String).join(" ")}),debug:(...v)=>emit({type:"log",text:v.map(String).join(" "))}};
+self.onmessage=async()=>{
+ try{const result=await (async()=>{\n${raw}\n})();emit({type:"done",text:result===undefined?"":String(result)});}
+ catch(error){emit({type:"error",text:error?.stack||error?.message||String(error)});}
+};`;
+        }
+        const blob=new Blob([source],{type:'text/javascript'}),workerUrl=URL.createObjectURL(blob);
+        worker=new Worker(workerUrl,language==='Python'?{type:'module'}:undefined);
+        URL.revokeObjectURL(workerUrl);
+        worker.onmessage=event=>{
+          const data=event.data||{};
+          if(data.type==='log'){output.textContent+=(output.textContent?'\n':'')+data.text;return;}
+          finish(data.text||'',data.type==='error');
+        };
+        worker.onerror=event=>finish(event.message||'Worker failed to start. Check browser support and network access.',true);
+        if(language==='Python'){
+          worker.postMessage({code:raw});
+          runTimer=setTimeout(()=>finish('Execution timed out after 15 seconds. The worker was terminated.',true),90000);
+        }else{
+          worker.postMessage({run:true});
+          runTimer=setTimeout(()=>finish('Execution timed out after 8 seconds. The worker was terminated.',true),8000);
+        }
+      }catch(error){finish(error.message||String(error),true);}
+    });
+  }
+\n  async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
     const e=ext(file),mime=file.type||'';
     if(mime.startsWith('audio/')||/\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|aiff?|mid|midi)$/i.test(file.name)){await renderAudio(file,url);}
     else if((mime.startsWith('image/')&&e!=='svg'&&mime!=='image/svg+xml')||/\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?)$/i.test(file.name)){const img=document.createElement('img');img.src=url;img.alt=file.name;img.className='file-preview-image';previewContent.append(img);}
     else if(mime==='application/pdf'||e==='pdf')await renderPdf(file,url);
+    else if(e==='html'||e==='htm'){const raw=await file.text();previewHtml(raw);}
+    else if(e==='css'){const raw=await file.text();previewCss(raw);}
+    else if(e==='py'||e==='pyw'){const raw=await file.text();codeRunner(file,'Python',raw);}
+    else if(e==='js'||e==='mjs'||e==='cjs'){const raw=await file.text();codeRunner(file,'JavaScript',raw);}
     else if(e==='pptx'){
       try{
         const slides=await extractPptxText(file),wrap=document.createElement('div');wrap.className='structured-preview';
