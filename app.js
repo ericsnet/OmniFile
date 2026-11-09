@@ -163,7 +163,7 @@
     const frame=document.createElement('iframe');
     frame.className='code-sandbox-frame';frame.title=title;frame.setAttribute('sandbox','');frame.referrerPolicy='no-referrer';
     frame.style.width='100%';frame.style.height=height+'px';frame.style.border='1px solid var(--line)';frame.style.borderRadius='12px';frame.style.background='#fff';
-    frame.srcdoc=source;return frame;
+    const frameUrl=URL.createObjectURL(new Blob([source],{type:'text/html;charset=utf-8'}));previewObjectUrls.push(frameUrl);frame.src=frameUrl;return frame;
   }
   function previewHtml(raw){
     const policy="<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; img-src data: blob:; media-src data: blob:; style-src 'unsafe-inline'; font-src data:; script-src 'none'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">";
