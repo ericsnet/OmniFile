@@ -23,7 +23,8 @@
     zip: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',()=>!!window.JSZip);return window.JSZip;},
     mammoth: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js',()=>!!window.mammoth);return window.mammoth;},
     sheet: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',()=>!!window.XLSX);return window.XLSX;},
-    markdown: async()=>{await loadScript('https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js',()=>!!window.marked);await loadScript('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js',()=>!!window.DOMPurify);return {marked:window.marked,DOMPurify:window.DOMPurify};}
+    markdown: async()=>{await loadScript('https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js',()=>!!window.marked);await loadScript('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js',()=>!!window.DOMPurify);return {marked:window.marked,DOMPurify:window.DOMPurify};},
+    yaml: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js',()=>!!window.jsyaml);return window.jsyaml;}
   };
   function ensurePreviewTools(){
     if (!$('#audio-visualizer-style')) { const style=document.createElement('style'); style.id='audio-visualizer-style'; style.textContent=`
@@ -136,22 +137,59 @@
     const button=document.createElement('button');button.className='secondary-btn';button.type='button';button.textContent='Render PDF pages as images';button.addEventListener('click',async()=>{button.disabled=true;try{const pdfjs=await libs.pdf();const doc=await pdfjs.getDocument({data:await file.arrayBuffer(),isEvalSupported:false}).promise;const gallery=document.createElement('div');gallery.className='page-gallery';previewContent.append(gallery);for(let n=1;n<=doc.numPages;n++){setStatus('Rendering PDF page '+n+' of '+doc.numPages+'…');await new Promise(resolve=>requestAnimationFrame(()=>resolve()));const page=await doc.getPage(n);let viewport=page.getViewport({scale:1.0});const base=page.getViewport({scale:1});const maxPixels=6_000_000;if(viewport.width*viewport.height>maxPixels)viewport=page.getViewport({scale:Math.sqrt(maxPixels/(base.width*base.height))});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Could not encode PDF page.')),'image/png'));const imageUrl=URL.createObjectURL(blob);previewObjectUrls.push(imageUrl);const img=document.createElement('img');img.src=imageUrl;img.alt='PDF page '+n;const a=document.createElement('a');a.href=imageUrl;a.download=file.name.replace(/\.pdf$/i,'')+'-page-'+n+'.png';a.textContent='Download page '+n+' as PNG';const card=document.createElement('div');card.append(img,a);gallery.append(card);canvas.width=1;canvas.height=1;page.cleanup();}await doc.destroy();setStatus('Rendered '+doc.numPages+' PDF page(s). Use each link to save a PNG.');}catch(e){setStatus(e.message||'Could not render this PDF.',true);}finally{button.disabled=false;}});previewContent.append(button);
     const extract=document.createElement('button');extract.className='secondary-btn';extract.type='button';extract.textContent='Extract PDF text';extract.style.marginLeft='8px';extract.addEventListener('click',async()=>{extract.disabled=true;try{const pdfjs=await libs.pdf();const doc=await pdfjs.getDocument({data:await file.arrayBuffer()}).promise;let all='';for(let n=1;n<=doc.numPages;n++){const page=await doc.getPage(n);const content=await page.getTextContent();all+='\n--- Page '+n+' ---\n'+content.items.map(x=>x.str).join(' ')+'\n';}const pre=document.createElement('pre');pre.textContent=all;previewContent.append(pre);setStatus('PDF text extracted.');}catch(e){setStatus(e.message||'Could not extract PDF text.',true);}finally{extract.disabled=false;}});previewContent.append(extract);
   }
+  async function extractPptxText(file){
+    const JSZip=await libs.zip(),zip=await JSZip.loadAsync(file);
+    const paths=Object.keys(zip.files).filter(p=>/^ppt\/slides\/slide\d+\.xml$/i.test(p)).sort((a,b)=>Number(a.match(/slide(\d+)/i)[1])-Number(b.match(/slide(\d+)/i)[1]));
+    if(!paths.length)throw new Error('No readable slides were found in this PPTX file.');
+    const slides=[];
+    for(let i=0;i<paths.length;i++){
+      const xml=await zip.file(paths[i]).async('text'),doc=new DOMParser().parseFromString(xml,'application/xml');
+      if(doc.querySelector('parsererror'))continue;
+      const text=Array.from(doc.getElementsByTagNameNS('*','t')).map(n=>n.textContent.trim()).filter(Boolean).join(' ');
+      slides.push({number:i+1,text});
+    }
+    return slides;
+  }
+  async function extractOdtText(file){
+    const JSZip=await libs.zip(),zip=await JSZip.loadAsync(file),entry=zip.file('content.xml');
+    if(!entry)throw new Error('The ODT archive does not contain content.xml.');
+    const xml=await entry.async('text'),doc=new DOMParser().parseFromString(xml,'application/xml');
+    if(doc.querySelector('parsererror'))throw new Error('The ODT document contains invalid XML.');
+    const ns='urn:oasis:names:tc:opendocument:xmlns:text:1.0';
+    return Array.from([...doc.getElementsByTagNameNS(ns,'h'),...doc.getElementsByTagNameNS(ns,'p')]).map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
+  }
   async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
     const e=ext(file),mime=file.type||'';
     if(mime.startsWith('audio/')||/\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|aiff?|mid|midi)$/i.test(file.name)){await renderAudio(file,url);}
     else if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|ico|tiff?)$/i.test(file.name)){const img=document.createElement('img');img.src=url;img.alt=file.name;img.className='file-preview-image';previewContent.append(img);}
     else if(mime==='application/pdf'||e==='pdf')await renderPdf(file,url);
+    else if(e==='pptx'){
+      try{
+        const slides=await extractPptxText(file),wrap=document.createElement('div');wrap.className='structured-preview';
+        slides.forEach(slide=>{const card=document.createElement('section');card.className='slide-preview';const heading=document.createElement('h3');heading.textContent='Slide '+slide.number;const body=document.createElement('p');body.textContent=slide.text||'[No extractable text on this slide]';card.append(heading,body);wrap.append(card);});
+        previewContent.append(wrap);setStatus('Extracted text from '+slides.length+' presentation slide(s). Images and animations are not rendered.');
+      }catch(err){textPreview('Could not preview PPTX: '+err.message);}
+    }
+    else if(e==='odt'){
+      try{textPreview(await extractOdtText(file));}
+      catch(err){textPreview('Could not preview ODT: '+err.message);}
+    }
     else if(/\.(docx)$/i.test(file.name)){const m=document.createElement('p');m.textContent='Loading Word document preview…';previewContent.append(m);try{const mammoth=await libs.mammoth();const result=await mammoth.convertToHtml({arrayBuffer:await file.arrayBuffer()});previewContent.innerHTML='<article class="structured-preview">'+result.value+'</article>';if(result.messages.length)setStatus('Document opened with '+result.messages.length+' conversion note(s).');}catch(err){m.textContent='Could not preview this DOCX file: '+err.message;}}
     else if(/\.(xlsx|xls|ods)$/i.test(file.name)){try{const XLSX=await libs.sheet();const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const html=XLSX.utils.sheet_to_html(wb.Sheets[wb.SheetNames[0]]);const wrap=document.createElement('div');wrap.className='structured-preview';wrap.innerHTML=html;previewContent.append(wrap);const select=document.createElement('select');wb.SheetNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;select.append(o);});select.addEventListener('change',()=>{wrap.innerHTML=XLSX.utils.sheet_to_html(wb.Sheets[select.value]);});previewContent.prepend(select);}catch(err){textPreview('Could not preview spreadsheet: '+err.message);}}
     else if(/\.(zip|cbz|epub)$/i.test(file.name)){try{const JSZip=await libs.zip();const zip=await JSZip.loadAsync(file);const list=document.createElement('div');list.className='archive-list';Object.values(zip.files).filter(x=>!x.dir).forEach(entry=>{const row=document.createElement('div');row.className='file-row';const name=document.createElement('span');name.textContent=entry.name;const download=document.createElement('button');download.className='text-btn';download.textContent='Extract';download.addEventListener('click',async()=>{const blob=await entry.async('blob');downloadBlob(blob,entry.name.split('/').pop()||'extracted-file');});row.append(name,download);list.append(row);});previewContent.append(list);}catch(err){textPreview('Could not open archive: '+err.message);}}
     else if(mime.startsWith('video/')||/\.(mp4|webm|ogv|mov|m4v|mkv|avi|mpeg|mpg|3gp)$/i.test(file.name)){const video=document.createElement('video');video.controls=true;video.src=url;video.className='file-preview-image';previewContent.append(video);const note=document.createElement('p');note.className='conversion-help';note.textContent='Playback depends on browser codec support; this does not transcode the video.';previewContent.append(note);}
+    else if(e==='yaml'||e==='yml'){
+      const raw=await file.text();
+      try{const yaml=await libs.yaml();textPreview(JSON.stringify(yaml.load(raw),null,2));}
+      catch(err){textPreview('Could not parse YAML: '+err.message);setStatus('YAML could not be parsed. Check its indentation and syntax.',true);}
+    }
     else if(e==='md'||e==='markdown'){
       const raw=await file.text();
       try{const {marked,DOMPurify}=await libs.markdown();const html=marked.parse(raw,{gfm:true,breaks:false});const article=document.createElement('article');article.className='markdown-preview';article.innerHTML=DOMPurify.sanitize(html,{USE_PROFILES:{html:true}});article.querySelectorAll('a').forEach(link=>{link.target='_blank';link.rel='noopener noreferrer';});previewContent.append(article);}
       catch(err){textPreview('Could not render Markdown: '+err.message+'\n\n'+raw);setStatus('Markdown renderer could not be loaded. Check your internet connection.',true);}
     }
-    else if(mime.startsWith('text/')||/\.(txt|md|json|js|ts|jsx|tsx|css|html|xml|csv|yml|yaml|log|py|rs|sh|toml|ini|conf|sql|java|c|h|cpp|go|php|rb|swift|kt|vue|svelte|graphql|tex|rtf|ics|vcf|m3u|pls|lrc|srt|vtt|ass|ssa)$/i.test(file.name)){
+    else if(mime.startsWith('text/')||/\.(txt|md|json|ipynb|jsonl|ndjson|js|mjs|cjs|ts|jsx|tsx|css|scss|less|html|htm|xml|xsd|xsl|csv|tsv|yml|yaml|log|py|pyw|rs|sh|bash|zsh|fish|bat|cmd|ps1|toml|ini|conf|env|properties|sql|java|c|h|cpp|hpp|cc|go|php|rb|swift|kt|kts|vue|svelte|graphql|proto|tex|rtf|ics|vcf|m3u|m3u8|pls|lrc|srt|vtt|ass|ssa|diff|patch|dockerfile|makefile|r|lua|pl|dart|ex|exs|scala)$/i.test(file.name)){
       const raw=await file.text();
       if(e==='json'){try{textPreview(JSON.stringify(JSON.parse(raw),null,2));}catch(_){textPreview(raw);}}
       else if(e==='csv'||e==='tsv'){const rows=raw.split(/\r?\n/).slice(0,500);const table=document.createElement('div');table.className='structured-preview';const t=document.createElement('table');rows.forEach((line,i)=>{const tr=document.createElement('tr');line.split(e==='tsv'?'\t':',').slice(0,30).forEach(cell=>{const td=document.createElement(i===0?'th':'td');td.textContent=cell.replace(/^"|"$/g,'');tr.append(td);});t.append(tr);});table.append(t);previewContent.append(table);}
@@ -175,7 +213,9 @@
     const e=ext(file),mime=file.type||'';let opts=[];
     if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name))opts=[['image/png','PNG image'],['image/jpeg','JPEG image'],['image/webp','WebP image'],['application/pdf','PDF document']];
     else if(mime==='application/pdf'||e==='pdf')opts=[['image/png','PNG images (one per page)'],['image/jpeg','JPEG images (one per page)'],['text/plain','Extract text (.txt)']];
-    else if(e==='json')opts=[['text/csv','CSV spreadsheet'],['application/pdf','PDF document'],['text/plain','Pretty JSON (.json)']];
+    else if(e==='json')opts=[['text/csv','CSV spreadsheet'],['application/pdf','PDF document'],['text/yaml','YAML document'],['text/plain','Pretty JSON (.json)']];
+    else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data'],['text/plain','Plain text (.txt)']];
+    else if(e==='pptx'||e==='odt')opts=[['text/plain','Extract text (.txt)']];
     else if(e==='csv'||e==='tsv')opts=[['application/json','JSON data'],['application/pdf','PDF document'],['text/csv','CSV']];
     else if(mime.startsWith('text/')||/\.(txt|md|html|xml|log|srt|vtt)$/i.test(file.name))opts=[['application/pdf','PDF document'],['text/plain','Plain text (.txt)'],['text/html','HTML document']];
     else if(e==='docx')opts=[['text/html','HTML document'],['text/plain','Plain text (.txt)']];
@@ -227,9 +267,23 @@
       else if(file.type.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name)){
         const image=await loadImage(file),canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;const ctx=canvas.getContext('2d',{alpha:target!=='image/jpeg'});if(target==='image/jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);}ctx.drawImage(image,0,0);const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('Image encoding failed.')),target,.92));downloadBlob(blob,file.name.replace(/\.[^.]+$/,'')+'.'+({'image/png':'png','image/jpeg':'jpg','image/webp':'webp'}[target]));
       }
+      else if(ext(file)==='yaml'||ext(file)==='yml'){
+        const yaml=await libs.yaml(),parsed=yaml.load(await file.text());
+        if(target==='application/json')downloadBlob(new Blob([JSON.stringify(parsed,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.json');
+        else downloadBlob(new Blob([String(await file.text())],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.txt');
+      }
+      else if(ext(file)==='pptx'){
+        const slides=await extractPptxText(file),text=slides.map(x=>'--- Slide '+x.number+' ---\n'+x.text).join('\n\n');
+        downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.pptx$/i,'')+'.txt');
+      }
+      else if(ext(file)==='odt'){
+        const text=await extractOdtText(file);
+        downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.odt$/i,'')+'.txt');
+      }
       else if(ext(file)==='json'){
         const parsed=JSON.parse(await file.text());if(target==='text/csv'){if(!Array.isArray(parsed))throw new Error('JSON to CSV requires an array of objects.');const keys=[...new Set(parsed.flatMap(x=>Object.keys(x||{})))];downloadBlob(new Blob([rowsToCsv([keys,...parsed.map(x=>keys.map(k=>x?.[k]&&typeof x[k]==='object'?JSON.stringify(x[k]):x?.[k]??''))])],{type:'text/csv;charset=utf-8'}),file.name.replace(/\.json$/i,'')+'.csv');}
         else if(target==='application/pdf')await textToPdf(JSON.stringify(parsed,null,2),file.name);
+        else if(target==='text/yaml'){const yaml=await libs.yaml();downloadBlob(new Blob([yaml.dump(parsed,{noRefs:true,lineWidth:120})],{type:'text/yaml;charset=utf-8'}),file.name.replace(/\.json$/i,'')+'.yaml');}
         else downloadBlob(new Blob([JSON.stringify(parsed,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.json$/i,'')+'.json');
       }
       else if(ext(file)==='csv'||ext(file)==='tsv'){
