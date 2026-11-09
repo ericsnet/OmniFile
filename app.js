@@ -400,10 +400,7 @@ self.onmessage=async()=>{
       if(/^<[^!?/][^>]*[^/]?>$/.test(token)&&!/<\/[^>]+>$/.test(token))depth++;
     });return formatted.trim();
   }
-  function renderRtf(raw){
-    const text=raw.replace(/\\par[d]?\b/g,'\n').replace(/\\tab\b/g,'\t').replace(/\\'[0-9a-f]{2}/gi,m=>String.fromCharCode(parseInt(m.slice(2),16))).replace(/\\u(-?\d+)\??/g,(_,n)=>String.fromCharCode((Number(n)+65536)%65536)).replace(/\\[a-zA-Z]+-?\d* ?/g,'').replace(/[{}]/g,'').replace(/\\\\([{}\\])/g,'$1').replace(/\n{3,}/g,'\n\n');
-    textPreview(text.trim());
-  }
+  function renderRtf(raw){textPreview(rtfToText(raw));}
   function unfoldCalendarLines(raw){return raw.replace(/\r?\n[ \t]/g,'');}
   function renderCalendar(raw){
     const lines=unfoldCalendarLines(raw).split(/\r?\n/),events=[];let current=null;
@@ -457,18 +454,6 @@ self.onmessage=async()=>{
     else if(e==='epub'){
       try{textPreview(await extractEpubText(file));setStatus('Extracted EPUB text in reading order. Images and page layout are not rendered.');}
       catch(err){textPreview('Could not preview EPUB: '+err.message);}
-    }
-    else if(e==='rtf'){
-      try{textPreview(rtfToText(await file.text()));}
-      catch(err){textPreview('Could not extract RTF text: '+err.message);}
-    }
-    else if(e==='ics'){
-      try{const events=calendarEvents(await file.text());if(!events.length)throw new Error('No VEVENT records were found.');structuredCards(events,'calendar');setStatus('Read '+events.length+' calendar event(s).');}
-      catch(err){textPreview('Could not read calendar: '+err.message);}
-    }
-    else if(e==='vcf'){
-      try{const contacts=vcardRecords(await file.text());if(!contacts.length)throw new Error('No vCard records were found.');structuredCards(contacts,'contacts');setStatus('Read '+contacts.length+' contact card(s).');}
-      catch(err){textPreview('Could not read contacts: '+err.message);}
     }
     else if(/\.(zip|cbz)$/i.test(file.name)){try{const JSZip=await libs.zip();const zip=await JSZip.loadAsync(file);const list=document.createElement('div');list.className='archive-list';Object.values(zip.files).filter(x=>!x.dir).forEach(entry=>{const row=document.createElement('div');row.className='file-row';const name=document.createElement('span');name.textContent=entry.name;const download=document.createElement('button');download.className='text-btn';download.textContent='Extract';download.addEventListener('click',async()=>{const blob=await entry.async('blob');downloadBlob(blob,entry.name.split('/').pop()||'extracted-file');});row.append(name,download);list.append(row);});previewContent.append(list);}catch(err){textPreview('Could not open archive: '+err.message);}}
     else if(mime.startsWith('video/')||/\.(mp4|webm|ogv|mov|m4v|mkv|avi|mpeg|mpg|3gp)$/i.test(file.name)){const video=document.createElement('video');video.controls=true;video.src=url;video.className='file-preview-image';previewContent.append(video);const note=document.createElement('p');note.className='conversion-help';note.textContent='Playback depends on browser codec support; this does not transcode the video.';previewContent.append(note);}
