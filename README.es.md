@@ -17,6 +17,7 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 - Convertir imágenes entre PNG, JPEG, WebP y PDF.
 - Convertir páginas PDF a PNG/JPEG (una imagen por página; los documentos multipágina se agrupan en ZIP) o extraer su texto.
 - Previsualizar YAML y convertir YAML a JSON; convertir JSON a YAML, además de texto, Markdown, HTML, CSV/TSV, DOCX y hojas de cálculo a formatos compatibles como PDF, HTML, TXT, CSV o JSON.
+- Interpretar campos CSV/TSV entrecomillados (incluidos delimitadores dentro de comillas y celdas multilínea), detectar delimitadores CSV habituales y validar registros JSONL/NDJSON línea por línea.
 - Procesar los archivos seleccionados en el navegador; OmniFile no los sube a un servidor propio.
 - Usar la misma interfaz en GitHub Pages o servirla desde tu propio equipo.
 - Cambiar el idioma de la interfaz entre español e inglés desde el selector superior.
@@ -79,7 +80,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
-| Texto y código fuente | TXT, Markdown, JSON/JSONL, YAML, TOML, INI, XML, HTML, CSV/TSV, subtítulos, logs y numerosos lenguajes; vista previa limitada a 2 MB de texto |
+| Texto y código fuente | TXT, Markdown, JSON/JSONL, YAML, TOML, INI, XML, HTML, CSV/TSV, subtítulos, logs y numerosos lenguajes; vista previa de texto limitada a 2 MB |
 | Audio y vídeo | Solo contenedores y códecs compatibles con el navegador |
 | MP4 a MP3 | **No implementado** en la versión web actual |
 | Documentos Office, archivos comprimidos, CAD, 3D y formatos propietarios | **Sin compatibilidad universal**; hacen falta bibliotecas específicas o herramientas externas locales |
