@@ -77,11 +77,13 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Conversión de imágenes | PNG, JPEG, WebP y PDF; depende de los codificadores del navegador |
 | Conversión de PDF | Páginas PDF a PNG/JPEG y texto PDF a TXT; las imágenes multipágina se agrupan en ZIP |
 | Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
-| Vista previa/conversión de Office | DOCX (HTML/TXT), ODT (texto) y PPTX (texto de diapositivas); XLSX/XLS/ODS (vista previa de hojas seleccionables; la exportación CSV/JSON usa la primera hoja) |\n| Interpretación de código | Vista visual HTML/CSS aislada; Python mediante Pyodide/WebAssembly; JavaScript mediante un Worker dedicado. Los notebooks Jupyter muestran celdas y salidas de texto sin ejecutar código |
+| Documentos y libros electrónicos | Texto de DOCX, ODT, RTF y EPUB; texto de diapositivas PPTX; hojas XLSX/XLS/ODS |
+| Calendario y contactos | Resumen de eventos ICS y campos de contactos VCF; exportación JSON |
+| Interpretación de código | Vista HTML/CSS aislada; Python mediante Pyodide/WebAssembly; JavaScript mediante un Worker dedicado |
 | Datos personales y calendario | Vista de campos principales de archivos `.ics`, `.vcf` y `.eml`; no decodifica adjuntos MIME ni todos los parámetros avanzados |
 | XML y RTF | XML/XSD/XSL validado y formateado; extracción básica de texto RTF (no conserva el diseño del documento) |
 | YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
-| Vista previa de archivos comprimidos | Listado ZIP y CBZ, con extracción individual; el EPUB extrae texto en orden de lectura, sin diseño de página |
+| Vista previa de archivos comprimidos | Listado ZIP y CBZ, con extracción individual; EPUB extrae texto en orden de lectura, sin diseño de página |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
