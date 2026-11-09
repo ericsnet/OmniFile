@@ -401,6 +401,42 @@ self.onmessage=async()=>{
     });return formatted.trim();
   }
   function renderRtf(raw){textPreview(rtfToText(raw));}
+  function fictionBookText(raw){
+    const doc=new DOMParser().parseFromString(raw,'application/xml');
+    if(doc.querySelector('parsererror'))throw new Error('The FictionBook XML is not well-formed.');
+    const ns='http://www.gribuser.ru/xml/ fictionbook/2.0';
+    const body=doc.getElementsByTagNameNS('*','body')[0];
+    if(!body)throw new Error('The FictionBook body section is missing.');
+    const title=Array.from(doc.getElementsByTagNameNS('*','book-title')).map(x=>x.textContent.trim()).filter(Boolean)[0]||'';
+    const author=Array.from(doc.getElementsByTagNameNS('*','author')).map(x=>['first-name','middle-name','last-name'].map(k=>x.getElementsByTagNameNS('*',k)[0]?.textContent.trim()).filter(Boolean).join(' ')).filter(Boolean).join(', ');
+    const parts=Array.from(body.getElementsByTagNameNS('*','p')).map(x=>x.textContent.trim()).filter(Boolean);
+    return [title,author,parts.join('\n\n')].filter(Boolean).join('\n\n');
+  }
+  function parseM3u(raw){
+    const entries=[];let pending=null;
+    raw.replace(/^\uFEFF/,'').split(/\r?\n/).forEach(line=>{
+      const value=line.trim();if(!value)return;
+      if(value.startsWith('#EXTINF:')){
+        const match=value.match(/^#EXTINF:([+-]?\d+),(.*)$/);
+        pending={duration:match?Number(match[1]):null,title:match?match[2].trim():'',location:''};
+      }else if(value.startsWith('#EXT-X-STREAM-INF:')){
+        pending={duration:null,title:'Variant stream',location:'',attributes:value.slice(value.indexOf(':')+1)};
+      }else if(!value.startsWith('#')){
+        const entry=pending||{duration:null,title:'',location:''};
+        entry.location=value;if(!entry.title)entry.title=value.split('/').pop();entries.push(entry);pending=null;
+      }
+    });
+    return entries;
+  }
+  function renderPlaylist(raw){
+    const entries=parseM3u(raw);if(!entries.length)throw new Error('No playlist entries were found.');
+    const wrap=document.createElement('div');wrap.className='structured-preview';
+    const note=document.createElement('p');note.className='conversion-help';note.textContent=entries.length+' playlist entries';
+    const table=document.createElement('table');
+    const head=document.createElement('tr');['#','Title','Duration (s)','File / URL'].forEach(v=>{const th=document.createElement('th');th.textContent=v;head.append(th);});table.append(head);
+    entries.forEach((entry,index)=>{const tr=document.createElement('tr');[index+1,entry.title,entry.duration??'',entry.location].forEach(value=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td);});table.append(tr);});
+    wrap.append(note,table);previewContent.append(wrap);
+  }
   function unfoldCalendarLines(raw){return raw.replace(/\r?\n[ \t]/g,'');}
   function renderCalendar(raw){
     const lines=unfoldCalendarLines(raw).split(/\r?\n/),events=[];let current=null;
@@ -433,6 +469,8 @@ self.onmessage=async()=>{
     else if(e==='py'||e==='pyw'){const raw=await file.text();codeRunner(file,'Python',raw);}
     else if(e==='js'){const raw=await file.text();codeRunner(file,'JavaScript',raw);}
     else if(e==='ipynb'){try{renderNotebook(await file.text());}catch(err){textPreview('Could not preview Jupyter Notebook: '+err.message);}}
+    else if(e==='fb2'){try{textPreview(fictionBookText(await file.text()));}catch(err){textPreview('Could not preview FictionBook: '+err.message);}}
+    else if(e==='m3u'||e==='m3u8'){try{renderPlaylist(await file.text());}catch(err){textPreview('Could not preview playlist: '+err.message);}}
     else if(e==='xml'||e==='xsd'||e==='xsl'){try{textPreview(prettyXml(await file.text()));}catch(err){textPreview('Could not format XML: '+err.message);setStatus('XML parsing failed. Check that the document is well-formed.',true);}}
     else if(e==='rtf'){renderRtf(await file.text());}
     else if(e==='ics'){try{renderCalendar(await file.text());}catch(err){textPreview('Could not preview calendar: '+err.message);}}
@@ -497,6 +535,8 @@ self.onmessage=async()=>{
     else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data']];
     else if(e==='pptx'||e==='odt')opts=[['text/plain','Extract text (.txt)']];
     else if(e==='epub'||e==='rtf')opts=[['text/plain','Extract text (.txt)']];
+    else if(e==='fb2')opts=[['text/plain','Extract text (.txt)']];
+    else if(e==='m3u'||e==='m3u8')opts=[['application/json','JSON data']];
     else if(e==='ics'||e==='vcf')opts=[['application/json','JSON data']];
     else if(e==='csv'||e==='tsv')opts=[['application/json','JSON data'],['application/pdf','PDF document'],['text/csv','CSV']];
     else if(mime.startsWith('text/')||/\.(txt|md|html|xml|log|srt|vtt)$/i.test(file.name))opts=[['application/pdf','PDF document'],['text/plain','Plain text (.txt)'],['text/html','HTML document']];
@@ -554,6 +594,15 @@ self.onmessage=async()=>{
         const yaml=await libs.yaml(),parsed=yaml.load(await file.text());
         if(target==='application/json')downloadBlob(new Blob([JSON.stringify(parsed,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.json');
         else downloadBlob(new Blob([String(await file.text())],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.(yaml|yml)$/i,'')+'.txt');
+      }
+      else if(ext(file)==='fb2'){
+        const text=fictionBookText(await file.text());
+        downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.fb2$/i,'')+'.txt');
+      }
+      else if(ext(file)==='m3u'||ext(file)==='m3u8'){
+        const entries=parseM3u(await file.text());
+        if(!entries.length)throw new Error('No playlist entries were found.');
+        downloadBlob(new Blob([JSON.stringify(entries,null,2)],{type:'application/json;charset=utf-8'}),file.name.replace(/\.(m3u8?)$/i,'')+'.json');
       }
       else if(ext(file)==='epub'){
         const text=await extractEpubText(file);
