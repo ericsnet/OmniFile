@@ -11,7 +11,7 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 - Abrir uno o varios archivos del dispositivo mediante el selector de archivos o arrastrar y soltar.
 - Previsualizar imágenes, PDF, audio, vídeo, código fuente, subtítulos y formatos de texto habituales.
 - Previsualizar documentos DOCX, ODT y RTF; extraer texto de presentaciones PPTX; consultar notebooks Jupyter (`.ipynb`), calendarios ICS, contactos vCard y correos EML; formatear XML/XSD/XSL; y consultar hojas XLSX/XLS/ODS.
-- Consultar el contenido de archivos ZIP/CBZ/EPUB y extraer archivos individuales desde el navegador.
+- Consultar archivos ZIP/CBZ y extraer archivos individuales. Los EPUB se procesan siguiendo el orden de lectura del libro.
 - Mostrar letras incrustadas en los metadatos del audio o en archivos `.lrc` asociados, junto con una onda animada que reacciona al sonido.
 - Importar archivos desde una URL directa si el servidor remoto permite el acceso entre orígenes (CORS).
 - Convertir imágenes entre PNG, JPEG, WebP y PDF.
@@ -81,7 +81,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Datos personales y calendario | Vista de campos principales de archivos `.ics`, `.vcf` y `.eml`; no decodifica adjuntos MIME ni todos los parámetros avanzados |
 | XML y RTF | XML/XSD/XSL validado y formateado; extracción básica de texto RTF (no conserva el diseño del documento) |
 | YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
-| Vista previa de archivos comprimidos | Listado ZIP, CBZ y EPUB, con extracción individual; no renderiza el EPUB como libro completo |
+| Vista previa de archivos comprimidos | Listado ZIP y CBZ, con extracción individual; el EPUB extrae texto en orden de lectura, sin diseño de página |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
