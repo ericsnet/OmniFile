@@ -175,7 +175,8 @@
     for(const item of spine){
       const href=manifest.get(item.getAttribute('idref'));
       if(!href)continue;
-      const path=(base+decodeURIComponent(href.split('#')[0])).replace(/\/+/g,'/');
+      const rawPath=(base+decodeURIComponent(href.split(/[?#]/)[0])).replace(/\\/g,'/');
+      const path=rawPath.split('/').reduce((parts,part)=>{if(!part||part==='.')return parts;if(part==='..')parts.pop();else parts.push(part);return parts;},[]).join('/');
       const entry=zip.file(path);
       if(!entry)continue;
       const doc=new DOMParser().parseFromString(await entry.async('text'),'text/html');
