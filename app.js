@@ -362,6 +362,69 @@ self.onmessage=async()=>{
     });
   }
 
+  function appendStructured(title, entries){
+    const wrap=document.createElement('div');wrap.className='structured-preview';
+    const heading=document.createElement('h3');heading.textContent=title;wrap.append(heading);
+    const table=document.createElement('table');
+    entries.forEach(([key,value])=>{const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');th.textContent=key;td.textContent=String(value??'');tr.append(th,td);table.append(tr);});
+    wrap.append(table);previewContent.append(wrap);return wrap;
+  }
+  function renderNotebook(raw){
+    const notebook=JSON.parse(raw);
+    if(!notebook||!Array.isArray(notebook.cells))throw new Error('Invalid Jupyter Notebook: cells array is missing.');
+    const wrap=document.createElement('div');wrap.className='notebook-preview';
+    const meta=document.createElement('p');meta.className='conversion-help';
+    const kernel=notebook.metadata?.kernelspec?.display_name||notebook.metadata?.kernelspec?.name||'Unknown kernel';
+    meta.textContent=notebook.cells.length+' cells · '+kernel+' · outputs are displayed as text only';wrap.append(meta);
+    notebook.cells.forEach((cell,index)=>{
+      const section=document.createElement('section');section.className='notebook-cell';
+      const head=document.createElement('div');head.className='conversion-help';head.textContent=(cell.cell_type||'cell').toUpperCase()+' · '+(index+1);
+      const source=document.createElement('pre');source.textContent=Array.isArray(cell.source)?cell.source.join(''):String(cell.source||'');section.append(head,source);
+      if(Array.isArray(cell.outputs))cell.outputs.forEach(output=>{
+        const text=[];
+        if(output.text)text.push(Array.isArray(output.text)?output.text.join(''):String(output.text));
+        if(output.data)for(const type of ['text/plain','text/markdown','text/html','application/json'])if(output.data[type]!==undefined)text.push(type+': '+(Array.isArray(output.data[type])?output.data[type].join(''):typeof output.data[type]==='string'?output.data[type]:JSON.stringify(output.data[type])));
+        if(output.data&&(output.data['image/png']||output.data['image/jpeg']))text.push('[Embedded image output omitted from the safe text preview]');
+        if(output.ename||output.evalue)text.push((output.ename||'Error')+': '+(output.evalue||''));
+        if(text.length){const out=document.createElement('pre');out.className='notebook-output';out.textContent=text.join('\n');section.append(out);}
+      });wrap.append(section);
+    });previewContent.append(wrap);
+  }
+  function prettyXml(raw){
+    const doc=new DOMParser().parseFromString(raw,'application/xml');
+    if(doc.querySelector('parsererror'))throw new Error('The XML document is not well-formed.');
+    const serialized=new XMLSerializer().serializeToString(doc);let formatted='',depth=0;
+    serialized.replace(/>\s*</g,'><').split(/(?=<)|(?<=>)/).filter(Boolean).forEach(token=>{
+      if(/^<\//.test(token))depth=Math.max(0,depth-1);
+      formatted+='  '.repeat(depth)+token.trim()+'\n';
+      if(/^<[^!?/][^>]*[^/]?>$/.test(token)&&!/<\/[^>]+>$/.test(token))depth++;
+    });return formatted.trim();
+  }
+  function renderRtf(raw){
+    const text=raw.replace(/\\par[d]?\b/g,'\n').replace(/\\tab\b/g,'\t').replace(/\\'[0-9a-f]{2}/gi,m=>String.fromCharCode(parseInt(m.slice(2),16))).replace(/\\u(-?\d+)\??/g,(_,n)=>String.fromCharCode((Number(n)+65536)%65536)).replace(/\\[a-zA-Z]+-?\d* ?/g,'').replace(/[{}]/g,'').replace(/\\\\([{}\\])/g,'$1').replace(/\n{3,}/g,'\n\n');
+    textPreview(text.trim());
+  }
+  function unfoldCalendarLines(raw){return raw.replace(/\r?\n[ \t]/g,'');}
+  function renderCalendar(raw){
+    const lines=unfoldCalendarLines(raw).split(/\r?\n/),events=[];let current=null;
+    for(const line of lines){if(line==='BEGIN:VEVENT'){current={};continue;}if(line==='END:VEVENT'){if(current)events.push(current);current=null;continue;}if(!current)continue;const split=line.indexOf(':');if(split<0)continue;const key=line.slice(0,split).split(';')[0].toUpperCase(),value=line.slice(split+1);if(['SUMMARY','DTSTART','DTEND','LOCATION','DESCRIPTION','STATUS','URL','ORGANIZER'].includes(key))current[key]=value.replace(/\\n/g,'\n').replace(/\\,/g,',').replace(/\\;/g,';');}
+    if(!events.length)throw new Error('No VEVENT calendar entries were found.');
+    const wrap=document.createElement('div');wrap.className='structured-preview';
+    events.forEach((event,index)=>{const card=document.createElement('section');card.className='notebook-cell';const heading=document.createElement('h3');heading.textContent=event.SUMMARY||('Event '+(index+1));const table=document.createElement('table');[['Start',event.DTSTART],['End',event.DTEND],['Location',event.LOCATION],['Status',event.STATUS],['Organizer',event.ORGANIZER],['Description',event.DESCRIPTION],['URL',event.URL]].filter(x=>x[1]).forEach(([key,value])=>{const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');th.textContent=key;td.textContent=value;tr.append(th,td);table.append(tr);});card.append(heading,table);wrap.append(card);});previewContent.append(wrap);
+  }
+  function renderVCard(raw){
+    const cards=raw.split(/(?=BEGIN:VCARD)/i).filter(x=>/^BEGIN:VCARD/i.test(x.trim()));if(!cards.length)throw new Error('No vCard contacts were found.');
+    const wrap=document.createElement('div');wrap.className='structured-preview';
+    cards.forEach((card,index)=>{const fields={};unfoldCalendarLines(card).split(/\r?\n/).forEach(line=>{const m=line.match(/^([A-Z0-9-]+)(?:;[^:]*)?:(.*)$/i);if(m)fields[m[1].toUpperCase()]=m[2];});const name=fields.FN||fields.N||('Contact '+(index+1)),section=document.createElement('section');section.className='notebook-cell';const heading=document.createElement('h3');heading.textContent=name;const table=document.createElement('table');[['Email',fields.EMAIL],['Phone',fields.TEL],['Organization',fields.ORG],['Title',fields.TITLE],['Address',fields.ADR],['Website',fields.URL],['Note',fields.NOTE]].filter(x=>x[1]).forEach(([key,value])=>{const tr=document.createElement('tr'),th=document.createElement('th'),td=document.createElement('td');th.textContent=key;td.textContent=value.replace(/\\,/g,',').replace(/\\n/g,'\n');tr.append(th,td);table.append(tr);});section.append(heading,table);wrap.append(section);});previewContent.append(wrap);
+  }
+  function renderEmail(raw){
+    const normalized=raw.replace(/\r\n/g,'\n'),parts=normalized.split(/\n\n/),headerText=parts.shift()||'',body=parts.join('\n\n'),headers={};let last='';
+    headerText.split('\n').forEach(line=>{if(/^[ \t]/.test(line)&&last){headers[last]+=' '+line.trim();return;}const m=line.match(/^([^:]+):\s*(.*)$/);if(m){last=m[1].toLowerCase();headers[last]=m[2];}});
+    const rows=['from','to','cc','date','subject','message-id'].filter(k=>headers[k]).map(k=>[k[0].toUpperCase()+k.slice(1),headers[k]]);
+    appendStructured('Email headers',rows);
+    if(body){const heading=document.createElement('h3');heading.textContent='Message body';const pre=document.createElement('pre');pre.textContent=body.slice(0,1000000);previewContent.append(heading,pre);}else textPreview('This email contains headers but no plain-text body. MIME attachments and encoded HTML parts are not decoded in this preview.');
+  }
+
   async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
     const e=ext(file),mime=file.type||'';
@@ -372,6 +435,12 @@ self.onmessage=async()=>{
     else if(e==='css'){const raw=await file.text();previewCss(raw);}
     else if(e==='py'||e==='pyw'){const raw=await file.text();codeRunner(file,'Python',raw);}
     else if(e==='js'){const raw=await file.text();codeRunner(file,'JavaScript',raw);}
+    else if(e==='ipynb'){try{renderNotebook(await file.text());}catch(err){textPreview('Could not preview Jupyter Notebook: '+err.message);}}
+    else if(e==='xml'||e==='xsd'||e==='xsl'){try{textPreview(prettyXml(await file.text()));}catch(err){textPreview('Could not format XML: '+err.message);setStatus('XML parsing failed. Check that the document is well-formed.',true);}}
+    else if(e==='rtf'){renderRtf(await file.text());}
+    else if(e==='ics'){try{renderCalendar(await file.text());}catch(err){textPreview('Could not preview calendar: '+err.message);}}
+    else if(e==='vcf'){try{renderVCard(await file.text());}catch(err){textPreview('Could not preview contacts: '+err.message);}}
+    else if(e==='eml'){try{renderEmail(await file.text());}catch(err){textPreview('Could not preview email: '+err.message);}}
     else if(e==='pptx'){
       try{
         const slides=await extractPptxText(file),wrap=document.createElement('div');wrap.className='structured-preview';
