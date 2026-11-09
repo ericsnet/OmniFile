@@ -181,7 +181,7 @@
     else if(mime.startsWith('video/')||/\.(mp4|webm|ogv|mov|m4v|mkv|avi|mpeg|mpg|3gp)$/i.test(file.name)){const video=document.createElement('video');video.controls=true;video.src=url;video.className='file-preview-image';previewContent.append(video);const note=document.createElement('p');note.className='conversion-help';note.textContent='Playback depends on browser codec support; this does not transcode the video.';previewContent.append(note);}
     else if(e==='yaml'||e==='yml'){
       const raw=await file.text();
-      try{const yaml=await libs.yaml();textPreview(JSON.stringify(yaml.load(raw),null,2));}
+      try{const yaml=await libs.yaml();textPreview(JSON.stringify(yaml.load(raw)??null,null,2));}
       catch(err){textPreview('Could not parse YAML: '+err.message);setStatus('YAML could not be parsed. Check its indentation and syntax.',true);}
     }
     else if(e==='md'||e==='markdown'){
@@ -214,7 +214,7 @@
     if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name))opts=[['image/png','PNG image'],['image/jpeg','JPEG image'],['image/webp','WebP image'],['application/pdf','PDF document']];
     else if(mime==='application/pdf'||e==='pdf')opts=[['image/png','PNG images (one per page)'],['image/jpeg','JPEG images (one per page)'],['text/plain','Extract text (.txt)']];
     else if(e==='json')opts=[['text/csv','CSV spreadsheet'],['application/pdf','PDF document'],['text/yaml','YAML document'],['text/plain','Pretty JSON (.json)']];
-    else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data'],['text/plain','Plain text (.txt)']];
+    else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data']];
     else if(e==='pptx'||e==='odt')opts=[['text/plain','Extract text (.txt)']];
     else if(e==='csv'||e==='tsv')opts=[['application/json','JSON data'],['application/pdf','PDF document'],['text/csv','CSV']];
     else if(mime.startsWith('text/')||/\.(txt|md|html|xml|log|srt|vtt)$/i.test(file.name))opts=[['application/pdf','PDF document'],['text/plain','Plain text (.txt)'],['text/html','HTML document']];
