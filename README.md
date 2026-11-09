@@ -71,6 +71,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | Text/data conversion | TXT/Markdown/HTML to PDF/HTML/TXT; JSON ↔ CSV for supported object arrays/tables |
 | Office and ebook preview | DOCX, ODT, RTF and EPUB text; PPTX slide text; XLSX/XLS/ODS worksheets |
 | Calendar, contacts and email | ICS event summaries, VCF contact fields and basic EML headers/body text; ICS/VCF JSON export |
+| Structured text | Jupyter notebook cells and text outputs; XML/XSD/XSL formatting; RTF and FictionBook text extraction |
 | Code interpretation | Sandboxed HTML/CSS preview; Python via Pyodide/WebAssembly; JavaScript via a dedicated Worker |
 | YAML | Parsed preview as JSON; YAML to JSON and JSON to YAML conversion |
 | Archive and playlist preview | ZIP/CBZ listing and extraction; EPUB/FB2 text extraction; M3U/M3U8 playlist entries and JSON export |
