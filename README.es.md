@@ -18,6 +18,8 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 - Convertir páginas PDF a PNG/JPEG (una imagen por página; los documentos multipágina se agrupan en ZIP) o extraer su texto.
 - Previsualizar YAML y convertir YAML a JSON; convertir JSON a YAML, además de texto, Markdown, HTML, CSV/TSV, DOCX y hojas de cálculo a formatos compatibles como PDF, HTML, TXT, CSV o JSON.
 - Interpretar campos CSV/TSV entrecomillados (incluidos delimitadores dentro de comillas y celdas multilínea), detectar delimitadores CSV habituales y validar registros JSONL/NDJSON línea por línea.
+- Renderizar HTML y CSS en marcos aislados: se bloquean los scripts HTML, los formularios, las solicitudes externas y la navegación del marco.
+- Ejecutar archivos `.py`/`.pyw` con Pyodide (WebAssembly) en un Web Worker y archivos `.js` en otro Worker sin acceso al DOM. La ejecución es manual y tiene un límite de tiempo.
 - Procesar los archivos seleccionados en el navegador; OmniFile no los sube a un servidor propio.
 - Usar la misma interfaz en GitHub Pages o servirla desde tu propio equipo.
 - Cambiar el idioma de la interfaz entre español e inglés desde el selector superior.
@@ -87,11 +89,11 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 
 «Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
 
-## Seguridad: el código subido nunca se ejecuta
+## Seguridad: el código solo se ejecuta en entornos limitados del navegador
 
-OmniFile trata los archivos de código, HTML, SVG, el contenido de documentos y las celdas de hojas de cálculo como **datos no confiables**. El código fuente se muestra como texto: la aplicación nunca lo evalúa, importa ni ejecuta. El HTML no se incrusta como una página activa; el SVG se muestra como texto; la vista previa DOCX extrae texto sin formato; las hojas de cálculo crean nodos DOM usando `textContent`; y los PDF se renderizan en un lienzo, no dentro de un marco. Markdown y el HTML generado desde DOCX se sanitizan antes de utilizarse. Una política CSP restrictiva bloquea scripts inline/eval, marcos y objetos de complementos.
+OmniFile trata los archivos subidos como datos no confiables. Las vistas previas HTML y CSS se muestran en marcos aislados con los scripts y las solicitudes de red desactivados. Python se ejecuta mediante Pyodide/WebAssembly en un Web Worker dedicado; JavaScript se ejecuta en otro Worker sin acceso al DOM. La ejecución solo comienza al pulsar **Run code** y los Workers se terminan al superar el límite de tiempo. Son entornos de navegador restringidos, no sistemas operativos completos ni Node.js. No permiten acceder a los archivos locales del usuario ni ejecutar programas nativos. Los demás formatos de código siguen siendo texto. El SVG se muestra como texto; DOCX extrae texto sin formato; las hojas de cálculo crean nodos DOM con `textContent`; y los PDF se renderizan en un lienzo. Markdown y el HTML generado desde DOCX se sanitizan antes de utilizarse.
 
-Este diseño aplica varias capas de protección en la vista previa del navegador, pero no garantiza que todos los analizadores de archivos de terceros o decodificadores multimedia estén libres de vulnerabilidades. Mantén el navegador actualizado y no consideres seguros los archivos de origen desconocido.
+Estas medidas reducen la exposición, pero no constituyen una frontera de seguridad formal ni garantizan que los navegadores, los entornos WebAssembly o los analizadores de terceros estén libres de vulnerabilidades. No ejecutes código de fuentes en las que no confíes.
 
 ## Privacidad y límites
 
