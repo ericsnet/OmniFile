@@ -52,6 +52,30 @@
     'For advanced media conversions, use the optional local Python service and install the required system tools.':'Para conversiones multimedia avanzadas, se puede añadir un servicio local de Python e instalar las herramientas de sistema necesarias.',
     'Useful file tools, without the mystery.':'Herramientas útiles para tus archivos, sin misterios.',
     'Open source project ↗':'Proyecto en GitHub ↗',
+    'Python interpreter':'Intérprete de Python',
+    'JavaScript interpreter':'Intérprete de JavaScript',
+    'Run code':'Ejecutar código',
+    'Stop':'Detener',
+    'Press “Run code” to execute this file in the browser sandbox.':'Pulsa «Ejecutar código» para ejecutar este archivo en el entorno aislado del navegador.',
+    'Runs with Pyodide (Python compiled to WebAssembly) in a dedicated Web Worker. No local Python installation or server is used.':'Se ejecuta con Pyodide (Python compilado a WebAssembly) en un Web Worker. No requiere instalar Python ni usar un servidor.',
+    'Runs in a dedicated Web Worker without DOM access. Network APIs and nested workers are disabled; this is not a full Node.js environment.':'Se ejecuta en un Web Worker sin acceso al DOM. Las API de red y los Workers anidados están desactivados; no es un entorno Node.js completo.',
+    'Sandboxed HTML preview: scripts, network requests, forms, pop-ups and access to the parent page are disabled.':'Vista HTML aislada: los scripts, las solicitudes de red, los formularios, las ventanas emergentes y el acceso a la página principal están desactivados.',
+    'CSS is applied to a sample document inside a sandboxed frame. Scripts and network access are disabled.':'El CSS se aplica a un documento de ejemplo dentro de un marco aislado. Los scripts y el acceso a la red están desactivados.',
+    'Sandboxed HTML preview':'Vista HTML aislada',
+    'Sandboxed CSS preview':'Vista CSS aislada',
+    'Loading Python WebAssembly runtime…':'Cargando el entorno Python WebAssembly…',
+    'Running JavaScript…':'Ejecutando JavaScript…',
+    'Python runtime ready. Executing…':'Entorno Python listo. Ejecutando…',
+    'Execution timed out after 20 seconds. The worker was terminated.':'La ejecución superó los 20 segundos. Se ha detenido el Worker.',
+    'Python runtime initialization timed out after 90 seconds. The worker was terminated.':'La inicialización de Python superó los 90 segundos. Se ha detenido el Worker.',
+    'Execution timed out after 8 seconds. The worker was terminated.':'La ejecución superó los 8 segundos. Se ha detenido el Worker.',
+    'Execution stopped.':'Ejecución detenida.',
+    'Code execution stopped.':'Se ha detenido la ejecución del código.',
+    'Execution finished.':'Ejecución terminada.',
+    'Execution finished with an error.':'La ejecución ha terminado con un error.',
+    'Worker failed to start. Check browser support and network access.':'No se ha podido iniciar el Worker. Comprueba la compatibilidad del navegador y la conexión.',
+    'Network access is disabled in this code runner.':'El acceso a la red está desactivado en este ejecutor de código.',
+    'Loading external scripts is disabled.':'La carga de scripts externos está desactivada.',
     'Unknown MIME type':'Tipo MIME desconocido',
     'No built-in preview for this format. The file is available to download from your device; advanced support may require a local tool.':'No hay vista previa integrada para este formato. El archivo sigue disponible en tu dispositivo; la compatibilidad avanzada puede requerir una herramienta local.',
     '[Preview truncated at 1 MB of text]':'[Vista previa limitada a 1 MB de texto]',
@@ -191,7 +215,7 @@
       if (node.matches('.brand')) node.setAttribute('aria-label', language === 'es' ? 'Inicio de OmniFile' : 'OmniFile home');
       if (node.matches('.workspace')) node.setAttribute('aria-label', language === 'es' ? 'Espacio de archivos' : 'File workspace');
       if (node.matches('.source-tabs')) node.setAttribute('aria-label', language === 'es' ? 'Origen del archivo' : 'File source');
-      if (node.matches('iframe')) node.title = language === 'es' ? 'Vista previa del PDF' : 'PDF preview';
+      if (node.matches('iframe')) { const titles = {'Sandboxed HTML preview':language==='es'?'Vista HTML aislada':'Sandboxed HTML preview','Sandboxed CSS preview':language==='es'?'Vista CSS aislada':'Sandboxed CSS preview'}; if(titles[node.title]) node.title=titles[node.title]; }
       if (node.matches('select#format-select')) {
         const opts = node.options;
         for (const opt of opts) {
