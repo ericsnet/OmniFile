@@ -238,7 +238,7 @@
       block.split(/\r?\n/).forEach(line=>{
         const m=line.match(/^([^:;]+)(?:;[^:]*)?:(.*)$/);
         if(!m)return;
-        const key=m[1].toUpperCase(),value=m[2].replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
+        const key=m[1].toUpperCase().split('.').pop(),value=m[2].replace(/\\n/gi,'\n').replace(/\\,/g,',').replace(/\\;/g,';').replace(/\\\\/g,'\\');
         (fields[key]||(fields[key]=[])).push(value);
       });
       return fields;
