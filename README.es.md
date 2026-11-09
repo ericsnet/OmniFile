@@ -10,7 +10,7 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 
 - Abrir uno o varios archivos del dispositivo mediante el selector de archivos o arrastrar y soltar.
 - Previsualizar imágenes, PDF, audio, vídeo, código fuente, subtítulos y formatos de texto habituales.
-- Previsualizar documentos DOCX, ODT y RTF; extraer texto de presentaciones PPTX; consultar notebooks Jupyter (`.ipynb`), calendarios ICS, contactos vCard y correos EML; formatear XML/XSD/XSL; y consultar hojas XLSX/XLS/ODS.
+- Previsualizar DOCX, ODT, RTF, EPUB y FictionBook 2 (`.fb2`); extraer texto de presentaciones PPTX; consultar notebooks Jupyter (`.ipynb`), calendarios ICS, contactos VCF, correos EML y listas M3U/M3U8; formatear XML/XSD/XSL; y consultar hojas XLSX/XLS/ODS.
 - Consultar archivos ZIP/CBZ y extraer archivos individuales. Los EPUB se procesan siguiendo el orden de lectura del libro.
 - Mostrar letras incrustadas en los metadatos del audio o en archivos `.lrc` asociados, junto con una onda animada que reacciona al sonido.
 - Importar archivos desde una URL directa si el servidor remoto permite el acceso entre orígenes (CORS).
@@ -78,12 +78,12 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Conversión de PDF | Páginas PDF a PNG/JPEG y texto PDF a TXT; las imágenes multipágina se agrupan en ZIP |
 | Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
 | Documentos y libros electrónicos | Texto de DOCX, ODT, RTF y EPUB; texto de diapositivas PPTX; hojas XLSX/XLS/ODS |
-| Calendario y contactos | Resumen de eventos ICS y campos de contactos VCF; exportación JSON |
+| Calendario, contactos y correo | Eventos ICS, campos VCF y cabeceras/cuerpo básico EML; exportación JSON de ICS/VCF |
 | Interpretación de código | Vista HTML/CSS aislada; Python mediante Pyodide/WebAssembly; JavaScript mediante un Worker dedicado |
 | Datos personales y calendario | Vista de campos principales de archivos `.ics`, `.vcf` y `.eml`; no decodifica adjuntos MIME ni todos los parámetros avanzados |
 | XML y RTF | XML/XSD/XSL validado y formateado; extracción básica de texto RTF (no conserva el diseño del documento) |
 | YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
-| Vista previa de archivos comprimidos | Listado ZIP y CBZ, con extracción individual; EPUB extrae texto en orden de lectura, sin diseño de página |
+| Archivos comprimidos, libros y listas | ZIP/CBZ con extracción; texto EPUB/FB2; listas M3U/M3U8 con exportación JSON |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
@@ -92,7 +92,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | MP4 a MP3 | **No implementado** en la versión web actual |
 | Documentos Office, archivos comprimidos, CAD, 3D y formatos propietarios | **Sin compatibilidad universal**; hacen falta bibliotecas específicas o herramientas externas locales |
 
-«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. Los notebooks muestran el código y las salidas textuales guardadas, pero nunca ejecutan las celdas. ICS, vCard y EML se muestran como datos estructurados básicos; no se decodifican adjuntos MIME. La conversión RTF es una extracción de texto sencilla y puede perder formato. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
+«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. Los notebooks Jupyter muestran el código de las celdas y las salidas de texto, pero no ejecutan código. XML/XSD/XSL se analizan y formatean como XML. Los notebooks muestran el código y las salidas textuales guardadas, pero nunca ejecutan las celdas. ICS, vCard y EML se muestran como datos estructurados básicos; no se decodifican adjuntos MIME. La conversión RTF es una extracción de texto sencilla y puede perder formato. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
 
 ## Seguridad: el código solo se ejecuta en entornos limitados del navegador
 
