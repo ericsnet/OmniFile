@@ -18,6 +18,8 @@ OmniFile is a static web app that can be published on GitHub Pages and opened lo
 - Convert PDF pages to PNG/JPEG (one page per image; multi-page output is bundled into ZIP), or extract PDF text.
 - Preview YAML and convert YAML to JSON; convert JSON to YAML, alongside text, Markdown, HTML, CSV/TSV, DOCX, and spreadsheet conversions to supported outputs such as PDF, HTML, TXT, CSV, or JSON.
 - Parse quoted CSV/TSV fields (including delimiters inside quoted values and multiline cells), detect common CSV delimiters, and inspect JSONL/NDJSON records line by line.
+- Render HTML and CSS in isolated sandboxed frames; HTML scripts, forms, external requests, and frame navigation are disabled.
+- Run `.py`/`.pyw` files with Pyodide (WebAssembly) in a dedicated Web Worker, and `.js` files in a separate Web Worker with no DOM access. Execution is manual and time-limited.
 - Process selected local files in the browser; OmniFile does not upload those files to an OmniFile backend.
 - Start the local web app with one launcher script; no Node.js packages or Python dependencies are required.
 - Switch the interface between English and Spanish using the language selector in the top bar.
@@ -83,11 +85,11 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 
 The repository is configured to deploy through GitHub Actions. The site is available at <https://ericsnet.github.io/OmniFile/> once the latest workflow run finishes. You can check **Actions** in the repository if the deployment is still pending.
 
-## Security: uploaded code is never executed
+## Security: code runs only in limited browser sandboxes
 
-OmniFile treats uploaded source files, HTML, SVG, document contents, and spreadsheet cells as **untrusted data**. Source code is shown as text; it is never evaluated, imported, or run by the app. HTML is not embedded as a live page, SVG is shown as source text, DOCX previews use plain-text extraction, spreadsheet previews build DOM nodes with `textContent`, and PDFs are rendered to canvas rather than embedded in a frame. Markdown and generated DOCX HTML are sanitized before use. A restrictive Content Security Policy blocks inline/eval scripts, frames, and plugin objects.
+OmniFile treats uploaded files as untrusted. HTML and CSS previews run in sandboxed iframes with scripts and network requests disabled. Python runs through Pyodide/WebAssembly in a dedicated Worker; JavaScript runs in a separate Worker without DOM access. Execution is started only after the user presses **Run code**, and workers are terminated after a time limit. These are constrained browser environments, not full operating systems or Node.js. They do not provide access to the user's local files or native executables. Other source formats remain text-only. SVG is shown as source text, DOCX previews use plain-text extraction, spreadsheet previews build DOM nodes with `textContent`, and PDFs are rendered to canvas. Markdown and generated DOCX HTML are sanitized before use.
 
-This is a defense-in-depth browser preview design, not a guarantee that every third-party file parser or browser media decoder is vulnerability-free. Keep your browser updated and do not treat files from unknown sources as safe to open.
+These controls reduce exposure but are not a formal security boundary or a guarantee that browser engines, WebAssembly runtimes, or third-party parsers are vulnerability-free. Do not run code from sources you do not trust.
 
 ## Privacy and limitations
 
