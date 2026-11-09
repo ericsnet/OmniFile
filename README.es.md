@@ -10,13 +10,13 @@ OmniFile reúne en una sola web la vista previa de archivos habituales y algunas
 
 - Abrir uno o varios archivos del dispositivo mediante el selector de archivos o arrastrar y soltar.
 - Previsualizar imágenes, PDF, audio, vídeo, código fuente, subtítulos y formatos de texto habituales.
-- Previsualizar documentos DOCX con Mammoth y consultar hojas XLSX/XLS/ODS con SheetJS.
+- Previsualizar documentos DOCX y ODT, extraer el texto de presentaciones PPTX y consultar hojas XLSX/XLS/ODS.
 - Consultar el contenido de archivos ZIP/CBZ/EPUB y extraer archivos individuales desde el navegador.
 - Mostrar letras incrustadas en los metadatos del audio o en archivos `.lrc` asociados, junto con una onda animada que reacciona al sonido.
 - Importar archivos desde una URL directa si el servidor remoto permite el acceso entre orígenes (CORS).
 - Convertir imágenes entre PNG, JPEG, WebP y PDF.
 - Convertir páginas PDF a PNG/JPEG (una imagen por página; los documentos multipágina se agrupan en ZIP) o extraer su texto.
-- Convertir texto, Markdown, HTML, JSON, CSV/TSV, DOCX y hojas de cálculo a formatos compatibles como PDF, HTML, TXT, CSV o JSON.
+- Previsualizar YAML y convertir YAML a JSON; convertir JSON a YAML, además de texto, Markdown, HTML, CSV/TSV, DOCX y hojas de cálculo a formatos compatibles como PDF, HTML, TXT, CSV o JSON.
 - Procesar los archivos seleccionados en el navegador; OmniFile no los sube a un servidor propio.
 - Usar la misma interfaz en GitHub Pages o servirla desde tu propio equipo.
 - Cambiar el idioma de la interfaz entre español e inglés desde el selector superior.
@@ -74,17 +74,17 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Conversión de imágenes | PNG, JPEG, WebP y PDF; depende de los codificadores del navegador |
 | Conversión de PDF | Páginas PDF a PNG/JPEG y texto PDF a TXT; las imágenes multipágina se agrupan en ZIP |
 | Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
-| Vista previa/conversión de Office | Vista previa DOCX y exportación a HTML/TXT; primera hoja XLSX/XLS/ODS a CSV/JSON |
+| Vista previa/conversión de Office | DOCX (HTML/TXT), ODT (texto) y PPTX (texto de diapositivas); XLSX/XLS/ODS (primera hoja a CSV/JSON) |\n| YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
 | Vista previa de archivos comprimidos | Listado ZIP, CBZ y EPUB, con extracción individual; no renderiza el EPUB como libro completo |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
-| Texto y código fuente | Formatos comunes de texto, marcado, configuración y código; vista previa limitada a 2 MB de texto |
+| Texto y código fuente | TXT, Markdown, JSON/JSONL, YAML, TOML, INI, XML, HTML, CSV/TSV, subtítulos, logs y numerosos lenguajes; vista previa limitada a 2 MB de texto |
 | Audio y vídeo | Solo contenedores y códecs compatibles con el navegador |
 | MP4 a MP3 | **No implementado** en la versión web actual |
 | Documentos Office, archivos comprimidos, CAD, 3D y formatos propietarios | **Sin compatibilidad universal**; hacen falta bibliotecas específicas o herramientas externas locales |
 
-«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
+«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
 
 ## Privacidad y límites
 
