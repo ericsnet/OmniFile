@@ -82,6 +82,12 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 
 The repository is configured to deploy through GitHub Actions. The site is available at <https://ericsnet.github.io/OmniFile/> once the latest workflow run finishes. You can check **Actions** in the repository if the deployment is still pending.
 
+## Security: uploaded code is never executed
+
+OmniFile treats uploaded source files, HTML, SVG, document contents, and spreadsheet cells as **untrusted data**. Source code is shown as text; it is never evaluated, imported, or run by the app. HTML is not embedded as a live page, SVG is shown as source text, DOCX previews use plain-text extraction, spreadsheet previews build DOM nodes with `textContent`, and PDFs are rendered to canvas rather than embedded in a frame. Markdown and generated DOCX HTML are sanitized before use. A restrictive Content Security Policy blocks inline/eval scripts, frames, and plugin objects.
+
+This is a defense-in-depth browser preview design, not a guarantee that every third-party file parser or browser media decoder is vulnerability-free. Keep your browser updated and do not treat files from unknown sources as safe to open.
+
 ## Privacy and limitations
 
 - Files selected from your device stay in the browser unless you explicitly open a remote URL. This app has no upload endpoint.
