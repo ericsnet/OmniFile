@@ -404,7 +404,6 @@ self.onmessage=async()=>{
   function fictionBookText(raw){
     const doc=new DOMParser().parseFromString(raw,'application/xml');
     if(doc.querySelector('parsererror'))throw new Error('The FictionBook XML is not well-formed.');
-    const ns='http://www.gribuser.ru/xml/ fictionbook/2.0';
     const body=doc.getElementsByTagNameNS('*','body')[0];
     if(!body)throw new Error('The FictionBook body section is missing.');
     const title=Array.from(doc.getElementsByTagNameNS('*','book-title')).map(x=>x.textContent.trim()).filter(Boolean)[0]||'';
