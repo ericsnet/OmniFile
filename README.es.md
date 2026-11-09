@@ -79,6 +79,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | Conversión de texto/datos | TXT/Markdown/HTML a PDF/HTML/TXT; JSON ↔ CSV para arrays de objetos y tablas compatibles |
 | Documentos y libros electrónicos | Texto de DOCX, ODT, RTF y EPUB; texto de diapositivas PPTX; hojas XLSX/XLS/ODS |
 | Calendario, contactos y correo | Eventos ICS, campos VCF y cabeceras/cuerpo básico EML; exportación JSON de ICS/VCF |
+| Texto estructurado | Celdas y salidas de texto Jupyter; formato XML/XSD/XSL; extracción de texto RTF y FictionBook |
 | Interpretación de código | Vista HTML/CSS aislada; Python mediante Pyodide/WebAssembly; JavaScript mediante un Worker dedicado |
 | Datos personales y calendario | Vista de campos principales de archivos `.ics`, `.vcf` y `.eml`; no decodifica adjuntos MIME ni todos los parámetros avanzados |
 | XML y RTF | XML/XSD/XSL validado y formateado; extracción básica de texto RTF (no conserva el diseño del documento) |
