@@ -156,7 +156,7 @@
     const xml=await entry.async('text'),doc=new DOMParser().parseFromString(xml,'application/xml');
     if(doc.querySelector('parsererror'))throw new Error('The ODT document contains invalid XML.');
     const ns='urn:oasis:names:tc:opendocument:xmlns:text:1.0';
-    return Array.from([...doc.getElementsByTagNameNS(ns,'h'),...doc.getElementsByTagNameNS(ns,'p')]).map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
+    return Array.from([...doc.getElementsByTagNameNS(ns,'h'),...doc.getElementsByTagNameNS(ns,'p')]).sort((x,y)=>x.compareDocumentPosition(y)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1).map(n=>n.textContent.trim()).filter(Boolean).join('\n\n');
   }
   async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
