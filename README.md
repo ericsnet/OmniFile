@@ -10,8 +10,8 @@ OmniFile is a static web app that can be published on GitHub Pages and opened lo
 
 - Open one or more files from your device using the file picker or drag and drop.
 - Preview browser-supported images, PDF, audio, video, source code, subtitles, and common text formats.
-- Preview DOCX and ODT documents, extract text from PPTX presentations, and inspect XLSX/XLS/ODS spreadsheets.
-- Inspect ZIP/CBZ/EPUB archive contents and extract individual files in the browser.
+- Preview DOCX, ODT, RTF, and EPUB text; extract PPTX slide text; inspect XLSX/XLS/ODS spreadsheets; and read ICS calendar events and VCF contact cards.
+- Inspect ZIP/CBZ archive contents and extract individual files in the browser. EPUB reading-order text can be extracted separately.
 - Read embedded ID3/Vorbis lyrics or matching .lrc sidecar files when present, with an animated audio-reactive waveform.
 - Import a direct file URL when the remote server permits cross-origin browser access (CORS).
 - Convert images between PNG, JPEG, WebP, and PDF.
@@ -71,7 +71,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | Text/data conversion | TXT/Markdown/HTML to PDF/HTML/TXT; JSON ↔ CSV for supported object arrays/tables |
 | Office preview/conversion | DOCX (HTML/TXT), ODT (text), PPTX (slide text); XLSX/XLS/ODS (selectable worksheet preview; CSV/JSON export uses the first sheet) |\n| Code interpretation | Sandboxed HTML/CSS preview; Python via Pyodide/WebAssembly; JavaScript via a dedicated Worker |
 | YAML | Parsed preview as JSON; YAML to JSON and JSON to YAML conversion |
-| Archive preview | ZIP, CBZ, EPUB file listing and individual-file extraction; not full EPUB rendering |
+| Archive preview | ZIP and CBZ file listing and individual-file extraction; EPUB reading-order text extraction (no page layout) |
 | Embedded audio lyrics | ID3 USLT/SYLT plus detected LYRICS/UNSYNCEDLYRICS comments; only if metadata exists |
 | Image to PDF | Yes, via jsPDF CDN; image is placed on a PDF page |
 | PDF preview | Browser PDF viewer support required |
@@ -80,7 +80,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | MP4 to MP3 | **Not implemented in the web version** |
 | Office documents, archives, CAD, 3D, proprietary formats | **No universal support yet**; format-specific libraries or external local tools are needed |
 
-“Universal” is the long-term goal, not a claim that every file type is supported today. PPTX preview extracts slide text but does not render layouts, images, transitions, or animations. ODT is processed by extracting text from its XML. A file extension alone does not guarantee a format can be decoded.
+“Universal” is the long-term goal, not a claim that every file type is supported today. PPTX preview extracts slide text but does not render layouts, images, transitions, or animations. ODT and RTF are processed as text extraction. EPUB extracts XHTML text in spine reading order without rendering page layout. ICS and VCF previews show recognized fields, not a full calendar or address-book application. A file extension alone does not guarantee a format can be decoded.
 
 ## GitHub Pages
 
