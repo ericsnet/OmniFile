@@ -190,7 +190,7 @@
     panel.append(head,explanation,output);previewContent.append(panel);
     let worker=null,loadTimer=null,runTimer=null;
     const cleanup=()=>{if(loadTimer)clearTimeout(loadTimer);if(runTimer)clearTimeout(runTimer);loadTimer=runTimer=null;if(worker){worker.terminate();worker=null;}run.disabled=false;stop.disabled=true;};
-    const finish=(message,isError=false)=>{cleanup();output.textContent=message||'(No output)';setStatus(isError?'Execution finished with an error.':'Execution finished.');};
+    const finish=(message,isError=false,append=false)=>{const prior=append&&output.textContent&&!output.textContent.startsWith('Running')?output.textContent:'';cleanup();output.textContent=[prior,message||'(No output)'].filter(Boolean).join(prior&&message?'\n':'');setStatus(isError?'Execution finished with an error.':'Execution finished.');};
     stop.addEventListener('click',()=>{cleanup();output.textContent+='\n\nExecution stopped.';setStatus('Code execution stopped.');});
     run.addEventListener('click',()=>{
       cleanup();output.textContent=language==='Python'?'Loading Python WebAssembly runtime…':'Starting JavaScript worker…';run.disabled=true;stop.disabled=false;
@@ -208,7 +208,9 @@ let runtime;
 self.onmessage=async({data})=>{
  try{
   runtime=runtime||await loadPyodide({indexURL:CDN});
+  self.postMessage({type:"ready"});
   const out=[];
+  await runtime.loadPackagesFromImports(data.code);
   runtime.setStdout({batched:s=>out.push(s)});
   runtime.setStderr({batched:s=>out.push(s)});
   const result=await runtime.runPythonAsync(data.code);
@@ -225,7 +227,7 @@ if(self.XMLHttpRequest)self.XMLHttpRequest=undefined;
 if(self.importScripts)self.importScripts=()=>{throw new Error("Loading external scripts is disabled.");};
 if(self.Worker)self.Worker=undefined;
 if(self.SharedWorker)self.SharedWorker=undefined;
-self.console={log:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),info:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),warn:(...v)=>emit({type:"log",text:"Warning: "+v.map(String).join(" ")}),error:(...v)=>emit({type:"log",text:"Error: "+v.map(String).join(" ")}),debug:(...v)=>emit({type:"log",text:v.map(String).join(" "))}};
+self.console={log:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),info:(...v)=>emit({type:"log",text:v.map(String).join(" ")}),warn:(...v)=>emit({type:"log",text:"Warning: "+v.map(String).join(" ")}),error:(...v)=>emit({type:"log",text:"Error: "+v.map(String).join(" ")}),debug:(...v)=>emit({type:"log",text:v.map(String).join(" ")})};
 self.onmessage=async()=>{
  try{const result=await (async()=>{\n${raw}\n})();emit({type:"done",text:result===undefined?"":String(result)});}
  catch(error){emit({type:"error",text:error?.stack||error?.message||String(error)});}
@@ -236,13 +238,14 @@ self.onmessage=async()=>{
         URL.revokeObjectURL(workerUrl);
         worker.onmessage=event=>{
           const data=event.data||{};
+          if(data.type==='ready'){output.textContent='Python runtime ready. Executing…';if(runTimer)clearTimeout(runTimer);runTimer=setTimeout(()=>finish('Execution timed out after 20 seconds. The worker was terminated.',true),20000);return;}
           if(data.type==='log'){output.textContent+=(output.textContent?'\n':'')+data.text;return;}
-          finish(data.text||'',data.type==='error');
+          finish(data.text||'',data.type==='error',language==='JavaScript');
         };
         worker.onerror=event=>finish(event.message||'Worker failed to start. Check browser support and network access.',true);
         if(language==='Python'){
           worker.postMessage({code:raw});
-          runTimer=setTimeout(()=>finish('Execution timed out after 15 seconds. The worker was terminated.',true),90000);
+          runTimer=setTimeout(()=>finish('Python runtime initialization timed out after 90 seconds. The worker was terminated.',true),90000);
         }else{
           worker.postMessage({run:true});
           runTimer=setTimeout(()=>finish('Execution timed out after 8 seconds. The worker was terminated.',true),8000);
@@ -250,7 +253,8 @@ self.onmessage=async()=>{
       }catch(error){finish(error.message||String(error),true);}
     });
   }
-\n  async function showPreview(file){
+
+  async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
     const e=ext(file),mime=file.type||'';
     if(mime.startsWith('audio/')||/\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|aiff?|mid|midi)$/i.test(file.name)){await renderAudio(file,url);}
@@ -259,7 +263,7 @@ self.onmessage=async()=>{
     else if(e==='html'||e==='htm'){const raw=await file.text();previewHtml(raw);}
     else if(e==='css'){const raw=await file.text();previewCss(raw);}
     else if(e==='py'||e==='pyw'){const raw=await file.text();codeRunner(file,'Python',raw);}
-    else if(e==='js'||e==='mjs'||e==='cjs'){const raw=await file.text();codeRunner(file,'JavaScript',raw);}
+    else if(e==='js'){const raw=await file.text();codeRunner(file,'JavaScript',raw);}
     else if(e==='pptx'){
       try{
         const slides=await extractPptxText(file),wrap=document.createElement('div');wrap.className='structured-preview';
