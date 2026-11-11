@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10111a">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https:; worker-src 'self' blob: https://cdnjs.cloudflare.com; frame-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' https:; worker-src 'self' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; frame-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="description" content="OmniFile — preview files and convert common formats in your browser.">
   <title>OmniFile — File tools, in one place</title>
   <link rel="stylesheet" href="./styles.css">
@@ -22,7 +22,7 @@
       <section class="hero">
         <div class="eyebrow"><span class="eyebrow-line"></span> YOUR FILES, YOUR WORKFLOW</div>
         <h1>Every file has<br><span>a place here.</span></h1>
-        <p class="hero-copy">Preview images, documents, audio, video, code, presentations, and archives. Convert PDFs, images, text, YAML, and structured data in your browser.</p>
+        <p class="hero-copy">Preview images, documents, audio, video, code, presentations, and archives. Convert PDFs, images, text, YAML, structured data, and MP4/MP3 media in your browser.</p>
         <div class="hero-tags"><span>Private by design</span><span>Browser-powered</span><span>No account needed</span></div>
       </section>
 
@@ -53,10 +53,10 @@
         </article>
         <article class="tool-card convert-card">
           <div class="card-top"><span class="tool-icon mint">⇄</span><span class="card-index">TOOL / 03</span></div>
-          <h3>Quick convert</h3><p>Convert PDF pages to PNG/JPEG, images to PDF, text to PDF, JSON to CSV/YAML, YAML to JSON, CSV to JSON, and more.</p>
+          <h3>Quick convert</h3><p>Convert PDF pages to PNG/JPEG, images to PDF, text to PDF, JSON to CSV/YAML, YAML to JSON, CSV to JSON, MP4 to MP3, and MP3 to MP4.</p>
           <label class="select-label" for="format-select">OUTPUT FORMAT</label>
           <div class="convert-row"><select id="format-select" disabled><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option><option value="image/webp">WebP</option><option value="application/pdf">PDF</option></select><button id="convert-action" class="primary-btn" type="button" disabled>Convert <span>↗</span></button></div>
-          <p class="tiny-note">Image conversion is browser-based. PDF export uses a small external library loaded from a CDN.</p>
+          <p class="tiny-note">Media conversion uses FFmpeg WebAssembly loaded on demand (about 31 MB). MP3 to MP4 creates a video with a static background. Files stay in your browser; media files are limited to 150 MB.</p>
         </article>
       </section>
 

@@ -24,7 +24,21 @@
     mammoth: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js',()=>!!window.mammoth);return window.mammoth;},
     sheet: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',()=>!!window.XLSX);return window.XLSX;},
     markdown: async()=>{await loadScript('https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js',()=>!!window.marked);await loadScript('https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js',()=>!!window.DOMPurify);return {marked:window.marked,DOMPurify:window.DOMPurify};},
-    yaml: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js',()=>!!window.jsyaml);return window.jsyaml;}
+    yaml: async()=>{await loadScript('https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js',()=>!!window.jsyaml);return window.jsyaml;},
+    ffmpeg: async()=>{
+      if(window.omniFFmpegInstance?.loaded)return window.omniFFmpegInstance;
+      if(window.omniFFmpegLoadPromise)return window.omniFFmpegLoadPromise;
+      window.omniFFmpegLoadPromise=(async()=>{
+        await loadScript('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js',()=>!!window.FFmpegWASM?.FFmpeg);
+        const ffmpeg=new window.FFmpegWASM.FFmpeg(),base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+        const toBlobURL=async(url,type)=>{const response=await fetch(url);if(!response.ok)throw new Error('Could not download the FFmpeg engine ('+response.status+').');return URL.createObjectURL(new Blob([await response.arrayBuffer()],{type}));};
+        let coreURL=null,wasmURL=null;
+        try{setStatus('Downloading FFmpeg WebAssembly (approximately 31 MB)…');[coreURL,wasmURL]=await Promise.all([toBlobURL(base+'/ffmpeg-core.js','text/javascript'),toBlobURL(base+'/ffmpeg-core.wasm','application/wasm')]);await ffmpeg.load({coreURL,wasmURL});}
+        finally{if(coreURL)URL.revokeObjectURL(coreURL);if(wasmURL)URL.revokeObjectURL(wasmURL);}
+        window.omniFFmpegInstance=ffmpeg;return ffmpeg;
+      })();
+      try{return await window.omniFFmpegLoadPromise;}finally{window.omniFFmpegLoadPromise=null;}
+    }
   };
   function ensurePreviewTools(){
     if (!$('#audio-visualizer-style')) { const style=document.createElement('style'); style.id='audio-visualizer-style'; style.textContent=`
@@ -529,7 +543,9 @@ self.onmessage=async()=>{
   };
   function conversionChoices(file){
     const e=ext(file),mime=file.type||'';let opts=[];
-    if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name))opts=[['image/png','PNG image'],['image/jpeg','JPEG image'],['image/webp','WebP image'],['application/pdf','PDF document']];
+    if(e==='mp4')opts=[['audio/mpeg','MP3 audio (extract audio)']];
+    else if(e==='mp3')opts=[['video/mp4','MP4 video (static background)']];
+    else if(mime.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name))opts=[['image/png','PNG image'],['image/jpeg','JPEG image'],['image/webp','WebP image'],['application/pdf','PDF document']];
     else if(mime==='application/pdf'||e==='pdf')opts=[['image/png','PNG images (one per page)'],['image/jpeg','JPEG images (one per page)'],['text/plain','Extract text (.txt)']];
     else if(e==='json')opts=[['text/csv','CSV spreadsheet'],['application/pdf','PDF document'],['text/yaml','YAML document'],['text/plain','Pretty JSON (.json)']];
     else if(e==='yaml'||e==='yml')opts=[['application/json','JSON data']];
@@ -577,10 +593,25 @@ self.onmessage=async()=>{
   function csvToRows(text,delimiter=','){const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'&&quoted&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')quoted=!quoted;else if(c===delimiter&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell='';}else cell+=c;}row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows;}
   function detectDelimiter(text){const candidates=[',',';','\t','|'];const sample=text.split(/\r?\n/).filter(line=>line.trim()).slice(0,12);let best=',',bestScore=-1;for(const delimiter of candidates){const counts=sample.map(line=>{let count=0,quoted=false;for(let i=0;i<line.length;i++){if(line[i]==='"'&&line[i+1]==='"'&&quoted){i++;continue;}if(line[i]==='"')quoted=!quoted;else if(line[i]===delimiter&&!quoted)count++;}return count;});const nonzero=counts.filter(n=>n>0);if(!nonzero.length)continue;const mean=nonzero.reduce((a,b)=>a+b,0)/nonzero.length,consistency=nonzero.length/sample.length;const score=mean*consistency;if(score>bestScore){bestScore=score;best=delimiter;}}return best;}
   function rowsToCsv(rows){return rows.map(row=>row.map(value=>{const s=String(value??'');return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');}
+  async function convertMedia(file,target){
+    if(file.size>150*1024*1024)throw new Error('For browser stability, media files must be 150 MB or smaller.');
+    const ffmpeg=await libs.ffmpeg(),inputName=ext(file)==='mp4'?'input.mp4':'input.mp3',outputName=target==='audio/mpeg'?'output.mp3':'output.mp4';
+    setStatus('Preparing media conversion…');
+    const progressHandler=({progress})=>{if(Number.isFinite(progress))setStatus('Converting media… '+Math.max(0,Math.min(100,Math.round(progress*100)))+'%');};
+    ffmpeg.on('progress',progressHandler);
+    try{
+      await ffmpeg.writeFile(inputName,new Uint8Array(await file.arrayBuffer()));setStatus('Converting media…');
+      const args=target==='audio/mpeg'?['-i',inputName,'-map','0:a:0','-vn','-c:a','libmp3lame','-q:a','2',outputName]:['-f','lavfi','-i','color=c=0x111827:s=1280x720:r=25','-i',inputName,'-map','0:v:0','-map','1:a:0','-shortest','-c:v','libx264','-preset','ultrafast','-tune','stillimage','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-threads','1','-movflags','+faststart',outputName];
+      const exitCode=await ffmpeg.exec(args);if(exitCode!==0)throw new Error('FFmpeg could not convert this file. It may use an unsupported codec or contain no audio track.');
+      const data=await ffmpeg.readFile(outputName);if(!data?.length)throw new Error('The conversion produced an empty file.');
+      const mime=target==='audio/mpeg'?'audio/mpeg':'video/mp4',extension=target==='audio/mpeg'?'mp3':'mp4';downloadBlob(new Blob([data],{type:mime}),file.name.replace(/\.[^.]+$/,'')+'.'+extension);
+    }finally{ffmpeg.off('progress',progressHandler);for(const name of [inputName,outputName]){try{await ffmpeg.deleteFile(name);}catch(_){}}}
+  }
   async function convertSelected(){
     const file=selectedFile();if(!file)return;const target=formatSelect.value;convertAction.disabled=true;
     try{
-      if((file.type==='application/pdf'||ext(file)==='pdf')&&(target==='image/png'||target==='image/jpeg'))await pdfToImages(file,target);
+      if((ext(file)==='mp4'&&target==='audio/mpeg')||(ext(file)==='mp3'&&target==='video/mp4'))await convertMedia(file,target);
+      else if((file.type==='application/pdf'||ext(file)==='pdf')&&(target==='image/png'||target==='image/jpeg'))await pdfToImages(file,target);
       else if((file.type==='application/pdf'||ext(file)==='pdf')&&target==='text/plain'){const pdfjs=await libs.pdf(),doc=await pdfjs.getDocument({data:await file.arrayBuffer(),isEvalSupported:false,enableXfa:false}).promise;let text='';for(let n=1;n<=doc.numPages;n++){const page=await doc.getPage(n),c=await page.getTextContent();text+='\n--- Page '+n+' ---\n'+c.items.map(x=>x.str).join(' ')+'\n';}downloadBlob(new Blob([text],{type:'text/plain;charset=utf-8'}),file.name.replace(/\.pdf$/i,'')+'.txt');}
       else if((file.type.startsWith('image/')||/\.(png|jpe?g|gif|webp|avif|bmp|svg|tiff?)$/i.test(file.name))&&target==='application/pdf'){
         if(!window.jspdf?.jsPDF)throw new Error('PDF export library did not load. Check your connection.');
