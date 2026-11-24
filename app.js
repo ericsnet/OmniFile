@@ -472,10 +472,27 @@ self.onmessage=async()=>{
     if(body){const heading=document.createElement('h3');heading.textContent='Message body';const pre=document.createElement('pre');pre.textContent=body.slice(0,1000000);previewContent.append(heading,pre);}else textPreview('This email contains headers but no plain-text body. MIME attachments and encoded HTML parts are not decoded in this preview.');
   }
 
+  async function renderEncryptedFile(file,url){
+    const buffer=await file.slice(0,512).arrayBuffer(),view=new Uint8Array(buffer);
+    const rows=[];
+    for(let offset=0;offset<view.length;offset+=16){
+      const chunk=view.slice(offset,offset+16);
+      const hex=Array.from(chunk,b=>b.toString(16).padStart(2,'0')).join(' ').padEnd(47,' ');
+      const ascii=Array.from(chunk,b=>b>=32&&b<=126?String.fromCharCode(b):'.').join('');
+      rows.push(offset.toString(16).padStart(8,'0')+'  '+hex+'  |'+ascii+'|');
+    }
+    const panel=document.createElement('div');panel.className='structured-preview';panel.style.width='100%';
+    const heading=document.createElement('h3');heading.textContent=t('Encrypted file inspection','Encrypted file inspection');
+    const note=document.createElement('p');note.className='conversion-help';note.textContent=t('This is a raw inspection only. .enc is a generic extension: the contents may be encrypted or encoded, and OmniFile cannot identify the encryption method or decrypt the file without the correct format and key.','This is a raw inspection only. .enc is a generic extension: the contents may be encrypted or encoded, and OmniFile cannot identify the encryption method or decrypt the file without the correct format and key.');
+    const meta=document.createElement('p');meta.className='conversion-help';meta.textContent=t('File size: ','File size: ')+bytes(file.size)+' · '+t('MIME type: ','MIME type: ')+(file.type||t('unknown','unknown'))+' · '+t('Showing the first 512 bytes','Showing the first 512 bytes');
+    const pre=document.createElement('pre');pre.textContent=rows.join('\n')||t('(empty file)','(empty file)');
+    const download=document.createElement('a');download.href=url;download.download=file.name;download.textContent=t('Download original .enc file','Download original .enc file');download.style.color='var(--purple)';
+    panel.append(heading,note,meta,pre,download);previewContent.append(panel);
+  }
   async function showPreview(file){
     if(!file)return;clearPreview();previewSection.classList.remove('hidden');previewTitle.textContent=file.name;const url=URL.createObjectURL(file);previewUrl=url;
     const e=ext(file),mime=file.type||'';
-    if(mime.startsWith('audio/')||/\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|aiff?|mid|midi)$/i.test(file.name)){await renderAudio(file,url);}
+    if(e==='enc'){await renderEncryptedFile(file,url);}\n    else if(mime.startsWith('audio/')||/\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|aiff?|mid|midi)$/i.test(file.name)){await renderAudio(file,url);}
     else if((mime.startsWith('image/')&&e!=='svg'&&mime!=='image/svg+xml')||/\.(png|jpe?g|gif|webp|avif|bmp|ico|tiff?)$/i.test(file.name)){const img=document.createElement('img');img.src=url;img.alt=file.name;img.className='file-preview-image';previewContent.append(img);}
     else if(mime==='application/pdf'||e==='pdf')await renderPdf(file,url);
     else if(e==='html'||e==='htm'){const raw=await file.text();previewHtml(raw);}
