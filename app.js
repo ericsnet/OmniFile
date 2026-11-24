@@ -712,7 +712,19 @@ self.onmessage=async()=>{
     const lines=pdf.splitTextToSize(text,width);let y=margin;for(const line of lines){if(y>pdf.internal.pageSize.getHeight()-margin){pdf.addPage();y=margin;}pdf.text(line,margin,y);y+=lineHeight;}pdf.save(name.replace(/\.[^.]+$/,'')+'.pdf');
   }
   document.querySelectorAll('.source-tab').forEach(tab=>tab.addEventListener('click',()=>{const local=tab.dataset.source==='local';document.querySelectorAll('.source-tab').forEach(b=>{b.classList.toggle('active',b===tab);b.setAttribute('aria-selected',String(b===tab));});$('#local-source').classList.toggle('hidden',!local);$('#url-source').classList.toggle('hidden',local);}));
-  fileInput.addEventListener('change',e=>{addFiles(e.target.files);fileInput.value='';});
+  // Capture file selection centrally to avoid label/bubbling inconsistencies.
+  document.addEventListener('change',e=>{
+    if(e.target!==fileInput)return;
+    const selected=Array.from(fileInput.files||[]);
+    if(!selected.length){setStatus('No file was selected.',true);return;}
+    try{
+      addFiles(selected);
+      fileInput.value='';
+    }catch(error){
+      setStatus('The file was selected, but OmniFile could not add it: '+(error.message||'Unknown error.'),true);
+      console.error('OmniFile file selection failed:',error);
+    }
+  },true);
   ['dragenter','dragover'].forEach(n=>dropZone.addEventListener(n,e=>{e.preventDefault();dropZone.classList.add('dragover');}));
   ['dragleave','drop'].forEach(n=>dropZone.addEventListener(n,e=>{e.preventDefault();dropZone.classList.remove('dragover');}));
   dropZone.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
