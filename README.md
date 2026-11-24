@@ -75,6 +75,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | Code interpretation | Sandboxed HTML/CSS preview; Python via Pyodide/WebAssembly; JavaScript via a dedicated Worker |
 | YAML | Parsed preview as JSON; YAML to JSON and JSON to YAML conversion |
 | Archive and playlist preview | ZIP/CBZ listing and extraction; EPUB/FB2 text extraction; M3U/M3U8 playlist entries and JSON export |
+| `.enc` file inspection | Raw hexadecimal and printable-byte preview (first 512 bytes), file metadata, and original-file download; no decryption |
 | Embedded audio lyrics | ID3 USLT/SYLT plus detected LYRICS/UNSYNCEDLYRICS comments; only if metadata exists |
 | Image to PDF | Yes, via jsPDF CDN; image is placed on a PDF page |
 | PDF preview | Browser PDF viewer support required |
@@ -83,7 +84,7 @@ The local server binds only to `127.0.0.1` (your own computer), not to your publ
 | MP4 to MP3 | **Not implemented in the web version** |
 | Office documents, archives, CAD, 3D, proprietary formats | **No universal support yet**; format-specific libraries or external local tools are needed |
 
-“Universal” is the long-term goal, not a claim that every file type is supported today. PPTX preview extracts slide text but does not render layouts, images, transitions, or animations. Jupyter notebooks show cell source and text outputs without executing code. XML/XSD/XSL files are parsed and formatted as XML. ODT and RTF are processed as text extraction. EPUB extracts XHTML text in spine reading order without rendering page layout. ICS and VCF previews show recognized fields, not a full calendar or address-book application. A file extension alone does not guarantee a format can be decoded.
+“Universal” is the long-term goal, not a claim that every file type is supported today. PPTX preview extracts slide text but does not render layouts, images, transitions, or animations. Jupyter notebooks show cell source and text outputs without executing code. XML/XSD/XSL files are parsed and formatted as XML. ODT and RTF are processed as text extraction. EPUB extracts XHTML text in spine reading order without rendering page layout. ICS and VCF previews show recognized fields, not a full calendar or address-book application. `.enc` is a generic extension, not one universal encryption format. OmniFile displays a raw hexadecimal/ASCII view of the first 512 bytes and file metadata; it does not decrypt the content. A file extension alone does not guarantee a format can be decoded.
 
 ## GitHub Pages
 
