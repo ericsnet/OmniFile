@@ -1,6 +1,14 @@
 (() => {
   const exact = {
     'Files stay in your browser':'Los archivos permanecen en tu navegador',
+    'Encrypted file inspection':'Inspección de archivo .enc',
+    'This is a raw inspection only. .enc is a generic extension: the contents may be encrypted or encoded, and OmniFile cannot identify the encryption method or decrypt the file without the correct format and key.':'Esto es solo una inspección en bruto. .enc es una extensión genérica: el contenido puede estar cifrado o codificado, y OmniFile no puede identificar el método ni descifrar el archivo sin conocer el formato y la clave correctos.',
+    'File size: ':'Tamaño del archivo: ',
+    'MIME type: ':'Tipo MIME: ',
+    'Showing the first 512 bytes':'Se muestran los primeros 512 bytes',
+    'unknown':'desconocido',
+    '(empty file)':'(archivo vacío)',
+    'Download original .enc file':'Descargar archivo .enc original',
     'YOUR FILES, YOUR WORKFLOW':'TUS ARCHIVOS, TU FLUJO DE TRABAJO',
     'Every file has':'Cada archivo',
     'a place here.':'tiene su lugar.',
