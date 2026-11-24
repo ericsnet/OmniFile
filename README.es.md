@@ -85,6 +85,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | XML y RTF | XML/XSD/XSL validado y formateado; extracción básica de texto RTF (no conserva el diseño del documento) |
 | YAML | Vista previa mediante parseo a JSON; conversión YAML a JSON y JSON a YAML |
 | Archivos comprimidos, libros y listas | ZIP/CBZ con extracción; texto EPUB/FB2; listas M3U/M3U8 con exportación JSON |
+| Inspección de archivos `.enc` | Vista hexadecimal y de bytes imprimibles (primeros 512 bytes), metadatos y descarga del original; no descifra el contenido |
 | Letras incrustadas en audio | ID3 USLT/SYLT y detección de comentarios LYRICS/UNSYNCEDLYRICS; solo si existen metadatos |
 | Imagen a PDF | Sí, mediante jsPDF; la imagen se coloca en una página PDF |
 | Vista previa de PDF | Requiere compatibilidad con el visor PDF del navegador |
@@ -93,7 +94,7 @@ La interfaz y el selector de idioma son los mismos en Pages y en local. La prefe
 | MP4 a MP3 | **No implementado** en la versión web actual |
 | Documentos Office, archivos comprimidos, CAD, 3D y formatos propietarios | **Sin compatibilidad universal**; hacen falta bibliotecas específicas o herramientas externas locales |
 
-«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. Los notebooks Jupyter muestran el código de las celdas y las salidas de texto, pero no ejecutan código. XML/XSD/XSL se analizan y formatean como XML. Los notebooks muestran el código y las salidas textuales guardadas, pero nunca ejecutan las celdas. ICS, vCard y EML se muestran como datos estructurados básicos; no se decodifican adjuntos MIME. La conversión RTF es una extracción de texto sencilla y puede perder formato. ODT se procesa extrayendo texto de su XML. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
+«Universal» es el objetivo del proyecto, no una afirmación de que ya pueda abrir cualquier formato. La vista previa PPTX extrae texto de las diapositivas, pero no reproduce diseños, imágenes, transiciones ni animaciones. Los notebooks Jupyter muestran el código de las celdas y las salidas de texto, pero no ejecutan código. XML/XSD/XSL se analizan y formatean como XML. Los notebooks muestran el código y las salidas textuales guardadas, pero nunca ejecutan las celdas. ICS, vCard y EML se muestran como datos estructurados básicos; no se decodifican adjuntos MIME. La conversión RTF es una extracción de texto sencilla y puede perder formato. ODT se procesa extrayendo texto de su XML. `.enc` es una extensión genérica, no un formato de cifrado universal. OmniFile muestra una vista hexadecimal/ASCII de los primeros 512 bytes y los metadatos, pero no descifra el contenido. La extensión del archivo por sí sola no garantiza que pueda decodificarse.
 
 ## Seguridad: el código solo se ejecuta en entornos limitados del navegador
 
